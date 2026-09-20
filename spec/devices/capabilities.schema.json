@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://netsira.dev/spec/devices/capabilities.schema.json",
+  "title": "Netsira device capabilities",
+  "type": "object",
+  "required": ["adapter", "vendor", "model", "capabilities"],
+  "properties": {
+    "adapter": { "type": "string" },
+    "vendor": { "type": "string" },
+    "model": { "type": "string" },
+    "firmware": { "type": ["string", "null"] },
+    "capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": ["signal", "noiseFloor", "snr", "chainRssi", "frequency", "channelWidth", "txPower", "txRate", "rxRate", "capacity", "throughput", "distance", "airmax", "ethernetSpeed", "ethernetDuplex", "uptime", "cpu", "memory"]
+      }
+    }
+  },
+  "additionalProperties": false
+}

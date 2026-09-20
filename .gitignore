@@ -1,0 +1,22 @@
+# Android / Gradle
+.gradle/
+**/build/
+local.properties
+*.iml
+.idea/
+
+# .NET
+**/bin/
+**/obj/
+.vs/
+
+# Node
+**/node_modules/
+web/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
