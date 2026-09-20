@@ -1,0 +1,17 @@
+:root {
+  --netsira-brand: #2563eb;
+}
+
+.navbar-brand {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.page {
+  min-height: 100vh;
+}
+
+.btn-primary {
+  --tblr-btn-bg: var(--netsira-brand);
+  --tblr-btn-border-color: var(--netsira-brand);
+}
