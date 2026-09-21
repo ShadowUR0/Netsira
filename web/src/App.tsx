@@ -15,6 +15,9 @@ const nav = [
 ] as const
 
 export function App() {
+  const [mlabConsent, setMlabConsent] = useState(false)
+  const [modeRunning, setModeRunning] = useState(false)
+  const [modeText, setModeText] = useState('Not run yet.')
   const [quick, setQuick] = useState('Not run yet.')
   const [quickRunning, setQuickRunning] = useState(false)
   const [lastQuick, setLastQuick] = useState<WebQuickResult | null>(null)
@@ -24,6 +27,36 @@ export function App() {
   const [distance, setDistance] = useState('1')
   const [frequency, setFrequency] = useState('5800')
   const [fspl, setFspl] = useState('—')
+
+  async function runStandard() {
+    if (!mlabConsent) {
+      setModeText('Enable the M-Lab privacy acknowledgement before running this test.')
+      return
+    }
+
+    setModeRunning(true)
+    setModeText('Running standard browser test…')
+    try {
+      const quickResult = await runWebQuickTest()
+      setLastQuick(quickResult)
+      const speedResult = await runNdt7()
+      setLastSpeed(speedResult)
+
+      setModeText([
+        'Mode: Standard',
+        'Browser online: ' + (quickResult.online ? 'yes' : 'no'),
+        'HTTPS reachability: ' + (quickResult.httpsReachable ? 'ok' : 'failed'),
+        'Request time: ' + (quickResult.latencyMs === null ? 'unavailable' : quickResult.latencyMs.toFixed(1) + ' ms'),
+        'Download: ' + speedResult.downloadMbps.toFixed(2) + ' Mb/s',
+        'Upload: ' + speedResult.uploadMbps.toFixed(2) + ' Mb/s',
+        ...quickResult.findings.map((finding) => '• ' + finding.title),
+      ].join('\n'))
+    } catch (error) {
+      setModeText('Standard test failed: ' + (error instanceof Error ? error.message : 'unknown error'))
+    } finally {
+      setModeRunning(false)
+    }
+  }
 
   async function runQuick() {
     setQuickRunning(true)
@@ -40,6 +73,11 @@ export function App() {
   }
 
   async function runSpeed() {
+    if (!mlabConsent) {
+      setSpeed('Enable the M-Lab privacy acknowledgement before running this test.')
+      return
+    }
+
     setSpeedRunning(true)
     setSpeed('Locating M-Lab server and running download/upload…')
     try {
@@ -95,6 +133,20 @@ export function App() {
         </div></div>
 
         <div className="page-body"><div className="container-xl"><div className="row row-cards">
+          <div className="col-12"><div className="card"><div className="card-body">
+            <h3 className="card-title">Test modes</h3>
+            <p className="text-secondary mb-2">The web edition supports the standard browser test. Comprehensive CPE/LAN diagnostics require a native app.</p>
+            <label className="form-check mb-3">
+              <input className="form-check-input" type="checkbox" checked={mlabConsent} onChange={(e) => setMlabConsent(e.target.checked)} />
+              <span className="form-check-label">I understand that M-Lab records measurement metadata including my public IP address</span>
+            </label>
+            <div className="d-flex gap-2 mb-3">
+              <button className="btn btn-primary" disabled={modeRunning} onClick={runStandard}>{modeRunning ? 'Running…' : 'Run standard test'}</button>
+              <button className="btn btn-secondary" disabled title="Use Android or desktop for CPE/LAN diagnostics">Comprehensive — native app</button>
+            </div>
+            <pre className="diagnostic-output">{modeText}</pre>
+          </div></div></div>
+
           <div className="col-lg-6"><div className="card h-100"><div className="card-body">
             <h3 className="card-title">Quick test</h3>
             <button className="btn btn-primary mb-3" disabled={quickRunning} onClick={runQuick}>{quickRunning ? 'Running…' : 'Run quick test'}</button>
