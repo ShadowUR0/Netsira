@@ -23,6 +23,7 @@ public sealed partial class MainWindow : Window
     private string _lastMode = "quick";
     private CancellationTokenSource? _alignmentCts;
     private CancellationTokenSource? _stabilityCts;
+    private AlignmentSummary? _lastAlignment;
     private StabilitySummary? _lastStability;
 
     public MainWindow() => InitializeComponent();
@@ -232,6 +233,9 @@ public sealed partial class MainWindow : Window
                 },
                 _alignmentCts.Token);
 
+            _lastAlignment = summary;
+            _lastMode = "alignment";
+            ExportReportButton.IsEnabled = true;
             AlignmentStatus.Text =
                 $"Stopped after {summary.SampleCount} samples.{Environment.NewLine}" +
                 $"Best/worst signal: {summary.BestSignalDbm?.ToString("0") ?? "?"} / {summary.WorstSignalDbm?.ToString("0") ?? "?"} dBm{Environment.NewLine}" +
@@ -362,7 +366,7 @@ public sealed partial class MainWindow : Window
 
     private async void ExportReport(object? sender, RoutedEventArgs e)
     {
-        var json = ReportBuilder.Build(_sessionStartedAt, _lastQuick, _lastSpeed, _lastAirOs, _lastStability, _lastMode);
+        var json = ReportBuilder.Build(_sessionStartedAt, _lastQuick, _lastSpeed, _lastAirOs, _lastAlignment, _lastStability, _lastMode);
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = "Export Netsira diagnostic report",

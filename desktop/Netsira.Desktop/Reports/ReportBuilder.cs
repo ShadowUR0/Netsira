@@ -8,7 +8,7 @@ namespace Netsira.Desktop.Reports;
 
 public static class ReportBuilder
 {
-    public static string Build(DateTimeOffset startedAt, QuickDiagnosticResult? quick, Ndt7Result? speed, AirOsSnapshot? airOs, StabilitySummary? stability = null, string? mode = null)
+    public static string Build(DateTimeOffset startedAt, QuickDiagnosticResult? quick, Ndt7Result? speed, AirOsSnapshot? airOs, AlignmentSummary? alignment = null, StabilitySummary? stability = null, string? mode = null)
     {
         var stages = new JsonArray();
         var findings = new JsonArray();
@@ -84,6 +84,23 @@ public static class ReportBuilder
                 }
             });
             AddFindings(findings, cpeFindings);
+        }
+
+        if (alignment is not null)
+        {
+            stages.Add(new JsonObject
+            {
+                ["id"] = "wireless",
+                ["status"] = alignment.MaxChainDeltaDb >= 8 ? "warning" : "info",
+                ["metrics"] = new JsonObject
+                {
+                    ["alignmentSampleCount"] = alignment.SampleCount,
+                    ["bestSignalDbm"] = alignment.BestSignalDbm,
+                    ["worstSignalDbm"] = alignment.WorstSignalDbm,
+                    ["averageSnrDb"] = alignment.AverageSnrDb,
+                    ["maxChainDeltaDb"] = alignment.MaxChainDeltaDb
+                }
+            });
         }
 
         if (stability is not null)
