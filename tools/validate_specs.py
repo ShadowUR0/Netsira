@@ -60,4 +60,24 @@ capabilities = load("spec/devices/capabilities.schema.json")
 if "capabilities" not in capabilities.get("properties", {}):
     raise SystemExit("Device capability schema is missing capabilities")
 
-print(f"Validated {len(vectors['cases'])} RF vectors, {len(codes)} finding codes, and core schemas.")
+monitoring = load("spec/diagnostics/monitoring.json")
+alignment = monitoring.get("alignment", {})
+stability = monitoring.get("stability", {})
+if alignment.get("defaultIntervalMs", 0) <= 0:
+    raise SystemExit("Alignment polling interval must be positive")
+if stability.get("defaultDurationSeconds", 0) <= 0:
+    raise SystemExit("Stability duration must be positive")
+if stability.get("defaultIntervalMs", 0) <= 0:
+    raise SystemExit("Stability polling interval must be positive")
+
+required_alignment = {"sampleCount", "bestSignalDbm", "worstSignalDbm", "averageSnrDb", "maxChainDeltaDb"}
+required_stability = {"sampleCount", "probeLossPercent", "averageLatencyMs", "jitterMs", "bestSignalDbm", "worstSignalDbm", "signalSpreadDb", "averageSnrDb"}
+if not required_alignment.issubset(set(alignment.get("summary", []))):
+    raise SystemExit("Alignment summary contract is incomplete")
+if not required_stability.issubset(set(stability.get("summary", []))):
+    raise SystemExit("Stability summary contract is incomplete")
+
+print(
+    f"Validated {len(vectors['cases'])} RF vectors, {len(codes)} finding codes, "
+    "monitoring contracts, and core schemas."
+)
