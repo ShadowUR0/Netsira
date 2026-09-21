@@ -362,7 +362,7 @@ public sealed partial class MainWindow : Window
 
     private async void ExportReport(object? sender, RoutedEventArgs e)
     {
-        var json = ReportBuilder.Build(_sessionStartedAt, _lastQuick, _lastSpeed, _lastAirOs, _lastMode);
+        var json = ReportBuilder.Build(_sessionStartedAt, _lastQuick, _lastSpeed, _lastAirOs, _lastStability, _lastMode);
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = "Export Netsira diagnostic report",

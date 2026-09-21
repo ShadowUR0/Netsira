@@ -8,7 +8,7 @@ namespace Netsira.Desktop.Reports;
 
 public static class ReportBuilder
 {
-    public static string Build(DateTimeOffset startedAt, QuickDiagnosticResult? quick, Ndt7Result? speed, AirOsSnapshot? airOs, string? mode = null)
+    public static string Build(DateTimeOffset startedAt, QuickDiagnosticResult? quick, Ndt7Result? speed, AirOsSnapshot? airOs, StabilitySummary? stability = null, string? mode = null)
     {
         var stages = new JsonArray();
         var findings = new JsonArray();
@@ -84,6 +84,42 @@ public static class ReportBuilder
                 }
             });
             AddFindings(findings, cpeFindings);
+        }
+
+        if (stability is not null)
+        {
+            stages.Add(new JsonObject
+            {
+                ["id"] = "internet",
+                ["status"] = stability.ProbeLossPercent >= 20
+                    ? "problem"
+                    : stability.ProbeLossPercent > 0 || stability.JitterMs >= 50 || stability.AverageLatencyMs >= 200
+                        ? "warning"
+                        : "info",
+                ["metrics"] = new JsonObject
+                {
+                    ["stabilitySampleCount"] = stability.SampleCount,
+                    ["probeLossPercent"] = stability.ProbeLossPercent,
+                    ["averageLatencyMs"] = stability.AverageLatencyMs,
+                    ["jitterMs"] = stability.JitterMs
+                }
+            });
+
+            if (stability.BestSignalDbm is not null || stability.WorstSignalDbm is not null || stability.AverageSnrDb is not null)
+            {
+                stages.Add(new JsonObject
+                {
+                    ["id"] = "wireless",
+                    ["status"] = stability.SignalSpreadDb >= 8 ? "warning" : "info",
+                    ["metrics"] = new JsonObject
+                    {
+                        ["bestSignalDbm"] = stability.BestSignalDbm,
+                        ["worstSignalDbm"] = stability.WorstSignalDbm,
+                        ["signalSpreadDb"] = stability.SignalSpreadDb,
+                        ["averageSnrDb"] = stability.AverageSnrDb
+                    }
+                });
+            }
         }
 
         var metadata = new JsonObject();
