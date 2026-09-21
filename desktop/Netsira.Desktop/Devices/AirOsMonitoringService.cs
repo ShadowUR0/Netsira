@@ -172,8 +172,8 @@ public sealed class StabilityMonitorService
         }
 
         var loss = samples.Count == 0 ? 0 : (samples.Count - latency.Length) * 100.0 / samples.Count;
-        var best = signal.Length == 0 ? null : signal.Max();
-        var worst = signal.Length == 0 ? null : signal.Min();
+        double? best = signal.Length == 0 ? null : signal.Max();
+        double? worst = signal.Length == 0 ? null : signal.Min();
 
         return new StabilitySummary(
             samples.Count,
