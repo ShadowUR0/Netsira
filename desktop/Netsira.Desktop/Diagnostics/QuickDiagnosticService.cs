@@ -40,7 +40,7 @@ public sealed class QuickDiagnosticService
         }
 
         var loss = (attempts - samples.Count) * 100.0 / attempts;
-        var average = samples.Count == 0 ? null : samples.Average();
+        double? average = samples.Count == 0 ? null : samples.Average();
         var jitter = CalculateJitter(samples);
         return new QuickDiagnosticResult(hasNetwork, gateway, dnsOk, average, jitter, loss,
             BuildFindings(hasNetwork, dnsOk, average, jitter, loss));
@@ -60,7 +60,7 @@ public sealed class QuickDiagnosticService
         var sw = Stopwatch.StartNew();
         try
         {
-            await client.ConnectAsync(host, port, ct).WaitAsync(TimeSpan.FromSeconds(3), ct);
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);\n            timeoutCts.CancelAfter(TimeSpan.FromSeconds(3));\n            await client.ConnectAsync(host, port, timeoutCts.Token);
             return sw.Elapsed.TotalMilliseconds;
         }
         catch { return null; }
