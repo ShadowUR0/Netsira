@@ -28,6 +28,36 @@ public sealed partial class MainWindow : Window
 
     public MainWindow() => InitializeComponent();
 
+    private void ShowPage(Control page)
+    {
+        DiagnosticsPage.IsVisible = ReferenceEquals(page, DiagnosticsPage);
+        DevicesPage.IsVisible = ReferenceEquals(page, DevicesPage);
+        CalculatorsPage.IsVisible = ReferenceEquals(page, CalculatorsPage);
+        HistoryPage.IsVisible = ReferenceEquals(page, HistoryPage);
+        SettingsPage.IsVisible = ReferenceEquals(page, SettingsPage);
+    }
+
+    private void NavigateDiagnostics(object? sender, RoutedEventArgs e) => ShowPage(DiagnosticsPage);
+    private void NavigateDevices(object? sender, RoutedEventArgs e) => ShowPage(DevicesPage);
+    private void NavigateCalculators(object? sender, RoutedEventArgs e) => ShowPage(CalculatorsPage);
+    private void NavigateHistory(object? sender, RoutedEventArgs e) => ShowPage(HistoryPage);
+    private void NavigateSettings(object? sender, RoutedEventArgs e) => ShowPage(SettingsPage);
+
+    private void UpdateQuickVisuals(QuickDiagnosticResult result)
+    {
+        var hasProblem = result.Findings.Any(x => x.Severity == "problem");
+        var hasWarning = result.Findings.Any(x => x.Severity == "warning");
+        OverallStatus.Text = hasProblem ? "Problem found" : hasWarning ? "Needs attention" : "Looks good";
+        InternetMetric.Text = result.HasNetwork
+            ? (result.AverageLatencyMs is null ? "Reachable" : $"{result.AverageLatencyMs:0} ms")
+            : "Unavailable";
+        LossMetric.Text = $"{result.LossPercent:0}%";
+        QuickTestStatus.Text =
+            string.Join(Environment.NewLine, result.Findings.Select(x => "• " + x.Title)) +
+            Environment.NewLine +
+            $"Details: DNS {(result.DnsOk ? "OK" : "failed")} · Jitter {(result.JitterMs?.ToString("0.0") ?? "—")} ms";
+    }
+
     private async void RunStandardTest(object? sender, RoutedEventArgs e) =>
         await RunModeAsync(DiagnosticMode.Standard);
 
@@ -58,8 +88,11 @@ public sealed partial class MainWindow : Window
 
             var run = await _runService.RunAsync(mode, settings);
             _lastQuick = run.Quick;
+            UpdateQuickVisuals(run.Quick);
             _lastMode = run.Mode.ToString().ToLowerInvariant();
             _lastSpeed = run.Speed;
+            if (run.Speed is not null)
+                DownloadMetric.Text = $"{run.Speed.DownloadMbps:0.0}";
             _lastAirOs = run.AirOs ?? _lastAirOs;
             ExportReportButton.IsEnabled = true;
 
@@ -88,7 +121,7 @@ public sealed partial class MainWindow : Window
             lines.AddRange(run.Quick.Findings.Select(x => "• " + x.Title));
             lines.AddRange(run.Skipped.Select(x => "Skipped: " + x));
             lines.AddRange(run.Errors.Select(x => "Error: " + x));
-            ModeTestStatus.Text = string.Join(Environment.NewLine, lines);
+            ModeTestStatus.Text = string.Join(Environment.NewLine, lines.Take(7));
         }
         catch (Exception ex)
         {
@@ -110,6 +143,7 @@ public sealed partial class MainWindow : Window
             var r = await _diagnostics.RunAsync();
             _lastQuick = r;
             _lastMode = "quick";
+            UpdateQuickVisuals(r);
             ExportReportButton.IsEnabled = true;
             var lines = new List<string>
             {
@@ -121,7 +155,10 @@ public sealed partial class MainWindow : Window
                 $"Probe loss: {r.LossPercent:0}%"
             };
             lines.AddRange(r.Findings.Select(x => "• " + x.Title));
-            QuickTestStatus.Text = string.Join(Environment.NewLine, lines);
+            QuickTestStatus.Text =
+                string.Join(Environment.NewLine, r.Findings.Select(x => "• " + x.Title)) +
+                Environment.NewLine +
+                $"Details: DNS {(r.DnsOk ? "OK" : "failed")} · Latency {(r.AverageLatencyMs?.ToString("0.0") ?? "—")} ms · Jitter {(r.JitterMs?.ToString("0.0") ?? "—")} ms";
         }
         catch (Exception ex) { QuickTestStatus.Text = "Quick test failed: " + ex.Message; }
         finally { QuickTestButton.IsEnabled = true; }
@@ -167,6 +204,11 @@ public sealed partial class MainWindow : Window
             _lastAirOs = r;
             _lastMode = "standard";
             ExportReportButton.IsEnabled = true;
+            SignalMetric.Text = r.SignalDbm is null ? "—" : $"{r.SignalDbm:0} dBm";
+            SnrMetric.Text = r.SnrDb is null ? "—" : $"{r.SnrDb:0} dB";
+            EthernetMetric.Text = r.EthernetSpeedMbps is null ? "—" : $"{r.EthernetSpeedMbps:0} Mb/s";
+            CpuMetric.Text = r.CpuLoadPercent is null ? "—" : $"{r.CpuLoadPercent:0}%";
+            DeviceFindingStatus.Text = string.Join(Environment.NewLine, FindingEngine.ForAirOs(r).Select(x => "• " + x.Title));
             var lines = new List<string>
             {
                 $"airOS API: {r.ApiVersion}",
@@ -187,7 +229,9 @@ public sealed partial class MainWindow : Window
                 $"CPU: {(r.CpuLoadPercent is null ? "unavailable" : $"{r.CpuLoadPercent:0.#}%")}"
             };
             lines.AddRange(FindingEngine.ForAirOs(r).Select(x => "• " + x.Title));
-            AirOsStatus.Text = string.Join(Environment.NewLine, lines);
+            AirOsStatus.Text =
+                $"{r.Model} · {r.Hostname ?? "unknown"} · {r.Firmware ?? "unknown"}{Environment.NewLine}" +
+                $"Frequency {(r.FrequencyMHz?.ToString("0") ?? "—")} MHz · Width {(r.ChannelWidthMHz?.ToString("0") ?? "—")} MHz · TX power {(r.TxPowerDbm?.ToString("0") ?? "—")} dBm";
         }
         catch (Exception ex) { AirOsStatus.Text = "airOS read failed: " + ex.Message; }
         finally { AirOsButton.IsEnabled = true; }
@@ -310,6 +354,7 @@ public sealed partial class MainWindow : Window
             _lastStability = summary;
             _lastMode = "stability";
             ExportReportButton.IsEnabled = true;
+            StabilityMetric.Text = $"{Math.Max(0, 100 - summary.ProbeLossPercent):0}%";
             StabilityStatus.Text =
                 $"Samples: {summary.SampleCount}{Environment.NewLine}" +
                 $"Probe loss: {summary.ProbeLossPercent:0.0}%{Environment.NewLine}" +
@@ -354,6 +399,7 @@ public sealed partial class MainWindow : Window
             _lastSpeed = r;
             _lastMode = "standard";
             ExportReportButton.IsEnabled = true;
+            DownloadMetric.Text = $"{r.DownloadMbps:0.0}";
             var location = string.Join(", ", new[] { r.City, r.Country }.Where(x => !string.IsNullOrWhiteSpace(x)));
             SpeedTestStatus.Text =
                 $"Download: {r.DownloadMbps:0.00} Mb/s{Environment.NewLine}" +
