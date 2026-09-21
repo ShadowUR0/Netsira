@@ -30,10 +30,8 @@ class AirOsLiveMonitorService {
         client: AirOsClient,
         intervalMs: Long = 1_000,
         onSample: suspend (AirOsLiveSample) -> Unit
-    ): AlignmentSummary {
-        val samples = mutableListOf<AirOsLiveSample>()
-        try {
-            while (true) {
+    ) {
+        while (true) {
                 coroutineContext.ensureActive()
                 val snapshot = client.readStatus()
                 val sample = AirOsLiveSample(
@@ -44,12 +42,8 @@ class AirOsLiveMonitorService {
                     chains = parseChains(snapshot.chainRssi),
                     cpuLoadPercent = snapshot.cpuLoadPercent
                 )
-                samples += sample
-                onSample(sample)
-                delay(intervalMs)
-            }
-        } finally {
-            // Caller cancellation stops the loop; summary is computed by the caller if needed.
+            onSample(sample)
+            delay(intervalMs)
         }
     }
 
