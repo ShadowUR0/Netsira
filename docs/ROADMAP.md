@@ -19,18 +19,19 @@ Completed on `develop`.
 
 Linux desktop remains a later target. iOS remains deferred to native Swift/SwiftUI.
 
-## Phase 2 — First useful diagnostics
+## Phase 2 — First useful diagnostics ✅
 
-Planned next:
+Completed on `develop`.
 
 - Shared RF calculation definitions and test vectors.
-- Quick test orchestration and result model.
+- Quick, standard and comprehensive diagnostic orchestration.
 - Android network-state and reachability implementation.
 - Desktop network-state and reachability implementation.
 - Web browser-safe reachability/measurement layer.
-- M-Lab NDT7 client integration with explicit privacy disclosure.
-- Initial airOS discovery/authentication/read-only status adapter.
-- First evidence-based findings engine.
-- Exportable diagnostic report.
+- M-Lab NDT7 client integration with explicit privacy acknowledgement.
+- UBNT local discovery plus airOS 6/8 authentication and read-only status adapter.
+- Evidence-based findings engine with shared codes and thresholds.
+- Exportable JSON diagnostic reports on Android, Desktop and Web.
+- CI validation for shared specs and RF vectors.
 
-Do not add device configuration writes in Phase 2.
+Phase 2 remains read-only for network devices; no device configuration writes were added.
