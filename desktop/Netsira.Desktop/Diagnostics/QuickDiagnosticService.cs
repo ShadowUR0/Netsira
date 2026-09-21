@@ -60,7 +60,9 @@ public sealed class QuickDiagnosticService
         var sw = Stopwatch.StartNew();
         try
         {
-            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);\n            timeoutCts.CancelAfter(TimeSpan.FromSeconds(3));\n            await client.ConnectAsync(host, port, timeoutCts.Token);
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(3));
+            await client.ConnectAsync(host, port, timeoutCts.Token);
             return sw.Elapsed.TotalMilliseconds;
         }
         catch { return null; }
