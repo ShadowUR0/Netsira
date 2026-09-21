@@ -88,6 +88,7 @@ private fun NetsiraApp() {
 
     var stabilityJob by remember { mutableStateOf<Job?>(null) }
     var stabilityText by remember { mutableStateOf("Not run yet.") }
+    var lastAlignment by remember { mutableStateOf<io.github.shadowur0.netsira.devices.AlignmentSummary?>(null) }
     var lastStability by remember { mutableStateOf<StabilitySummary?>(null) }
 
     var discoveryRunning by remember { mutableStateOf(false) }
@@ -171,6 +172,8 @@ private fun NetsiraApp() {
                 }
             } catch (_: CancellationException) {
                 val summary = AirOsLiveMonitorService.summarize(alignmentSamples.toList())
+                lastAlignment = summary
+                lastMode = "alignment"
                 alignmentText =
                     "Stopped after " + summary.sampleCount + " samples.\n" +
                     "Best/worst signal: " + (summary.bestSignalDbm?.toInt()?.toString() ?: "?") + " / " +
@@ -272,7 +275,7 @@ private fun NetsiraApp() {
                 Button(
                     enabled = lastQuick != null || lastSpeed != null || lastAirOs != null,
                     onClick = {
-                        pendingReport = AndroidReportBuilder.build(sessionStartedAt, lastQuick, lastSpeed, lastAirOs, lastStability, lastMode)
+                        pendingReport = AndroidReportBuilder.build(sessionStartedAt, lastQuick, lastSpeed, lastAirOs, lastAlignment, lastStability, lastMode)
                         exportLauncher.launch("netsira-report-" + System.currentTimeMillis() + ".json")
                     }
                 ) { Text("Export report") }

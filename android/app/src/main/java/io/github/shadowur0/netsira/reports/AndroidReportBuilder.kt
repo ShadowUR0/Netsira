@@ -2,6 +2,7 @@
 package io.github.shadowur0.netsira.reports
 
 import io.github.shadowur0.netsira.devices.AirOsSnapshot
+import io.github.shadowur0.netsira.devices.AlignmentSummary
 import io.github.shadowur0.netsira.devices.StabilitySummary
 import io.github.shadowur0.netsira.diagnostics.DiagnosticFinding
 import io.github.shadowur0.netsira.diagnostics.FindingEngine
@@ -18,6 +19,7 @@ object AndroidReportBuilder {
         quick: QuickDiagnosticResult?,
         speed: Ndt7Result?,
         airOs: AirOsSnapshot?,
+        alignment: AlignmentSummary? = null,
         stability: StabilitySummary? = null,
         mode: String? = null
     ): String {
@@ -82,6 +84,20 @@ object AndroidReportBuilder {
                         .putNullable("cpuLoadPercent", airOs.cpuLoadPercent))
             )
             addFindings(findings, cpeFindings)
+        }
+
+        if (alignment != null) {
+            stages.put(
+                JSONObject()
+                    .put("id", "wireless")
+                    .put("status", if ((alignment.maxChainDeltaDb ?: 0.0) >= 8) "warning" else "info")
+                    .put("metrics", JSONObject()
+                        .put("alignmentSampleCount", alignment.sampleCount)
+                        .putNullable("bestSignalDbm", alignment.bestSignalDbm)
+                        .putNullable("worstSignalDbm", alignment.worstSignalDbm)
+                        .putNullable("averageSnrDb", alignment.averageSnrDb)
+                        .putNullable("maxChainDeltaDb", alignment.maxChainDeltaDb))
+            )
         }
 
         if (stability != null) {
