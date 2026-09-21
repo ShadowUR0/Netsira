@@ -53,6 +53,7 @@ private fun NetsiraApp() {
     var lastQuick by remember { mutableStateOf<QuickDiagnosticResult?>(null) }
     var lastSpeed by remember { mutableStateOf<Ndt7Result?>(null) }
     var lastAirOs by remember { mutableStateOf<AirOsSnapshot?>(null) }
+    var lastMode by remember { mutableStateOf("quick") }
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
@@ -101,6 +102,7 @@ private fun NetsiraApp() {
                 AirOsConnectionSettings(airOsHost, airOsUser, airOsPassword)
             )
             lastQuick = run.quick
+            lastMode = run.mode.name.lowercase()
             lastSpeed = run.speed
             if (run.airOs != null) lastAirOs = run.airOs
 
@@ -166,7 +168,7 @@ private fun NetsiraApp() {
                 Button(
                     enabled = lastQuick != null || lastSpeed != null || lastAirOs != null,
                     onClick = {
-                        pendingReport = AndroidReportBuilder.build(sessionStartedAt, lastQuick, lastSpeed, lastAirOs)
+                        pendingReport = AndroidReportBuilder.build(sessionStartedAt, lastQuick, lastSpeed, lastAirOs, lastMode)
                         exportLauncher.launch("netsira-report-" + System.currentTimeMillis() + ".json")
                     }
                 ) { Text("Export report") }
@@ -179,6 +181,8 @@ private fun NetsiraApp() {
                         quickText = "Running…"
                         scope.launch {
                             val r = QuickDiagnostic(context).run()
+                            lastQuick = r
+                            lastMode = "quick"
                             quickText = buildString {
                                 appendLine("Network: " + if (r.hasNetwork) r.transport else "unavailable")
                                 appendLine("DNS: " + if (r.dnsOk) "ok" else "failed")
@@ -236,6 +240,7 @@ private fun NetsiraApp() {
                             airOsText = try {
                                 val r = withContext(Dispatchers.IO) { AirOsClient().connectAndRead(airOsHost, airOsUser, airOsPassword) }
                                 lastAirOs = r
+                                lastMode = "standard"
                                 buildString {
                                     appendLine("airOS API: " + r.apiVersion)
                                     appendLine("Model: " + r.model)
@@ -276,6 +281,7 @@ private fun NetsiraApp() {
                             speedText = try {
                                 val r = MlabNdt7Client().run()
                                 lastSpeed = r
+                                lastMode = "standard"
                                 val location = listOfNotNull(r.city, r.country).joinToString(", ")
                                 "Download: " + String.format(Locale.US, "%.2f Mb/s", r.downloadMbps) + "\n" +
                                     "Upload: " + String.format(Locale.US, "%.2f Mb/s", r.uploadMbps) + "\n" +

@@ -8,7 +8,7 @@ namespace Netsira.Desktop.Reports;
 
 public static class ReportBuilder
 {
-    public static string Build(DateTimeOffset startedAt, QuickDiagnosticResult? quick, Ndt7Result? speed, AirOsSnapshot? airOs)
+    public static string Build(DateTimeOffset startedAt, QuickDiagnosticResult? quick, Ndt7Result? speed, AirOsSnapshot? airOs, string? mode = null)
     {
         var stages = new JsonArray();
         var findings = new JsonArray();
@@ -99,7 +99,7 @@ public static class ReportBuilder
         {
             ["schemaVersion"] = "0.1.0",
             ["id"] = Guid.NewGuid().ToString(),
-            ["mode"] = speed is not null || airOs is not null ? "standard" : "quick",
+            ["mode"] = mode ?? (speed is not null || airOs is not null ? "standard" : "quick"),
             ["platform"] = "windows",
             ["startedAt"] = startedAt.ToString("O"),
             ["endedAt"] = DateTimeOffset.UtcNow.ToString("O"),

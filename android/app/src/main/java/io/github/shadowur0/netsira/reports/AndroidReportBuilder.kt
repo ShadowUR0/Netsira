@@ -16,7 +16,8 @@ object AndroidReportBuilder {
         startedAt: String,
         quick: QuickDiagnosticResult?,
         speed: Ndt7Result?,
-        airOs: AirOsSnapshot?
+        airOs: AirOsSnapshot?,
+        mode: String? = null
     ): String {
         val stages = JSONArray()
         val findings = JSONArray()
@@ -92,7 +93,7 @@ object AndroidReportBuilder {
         return JSONObject()
             .put("schemaVersion", "0.1.0")
             .put("id", UUID.randomUUID().toString())
-            .put("mode", if (speed != null || airOs != null) "standard" else "quick")
+            .put("mode", mode ?: if (speed != null || airOs != null) "standard" else "quick")
             .put("platform", "android")
             .put("startedAt", startedAt)
             .put("endedAt", Instant.now().toString())

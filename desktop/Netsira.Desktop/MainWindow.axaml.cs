@@ -19,6 +19,7 @@ public sealed partial class MainWindow : Window
     private QuickDiagnosticResult? _lastQuick;
     private Ndt7Result? _lastSpeed;
     private AirOsSnapshot? _lastAirOs;
+    private string _lastMode = "quick";
 
     public MainWindow() => InitializeComponent();
 
@@ -52,6 +53,7 @@ public sealed partial class MainWindow : Window
 
             var run = await _runService.RunAsync(mode, settings);
             _lastQuick = run.Quick;
+            _lastMode = run.Mode.ToString().ToLowerInvariant();
             _lastSpeed = run.Speed;
             _lastAirOs = run.AirOs ?? _lastAirOs;
             ExportReportButton.IsEnabled = true;
@@ -102,6 +104,7 @@ public sealed partial class MainWindow : Window
         {
             var r = await _diagnostics.RunAsync();
             _lastQuick = r;
+            _lastMode = "quick";
             ExportReportButton.IsEnabled = true;
             var lines = new List<string>
             {
@@ -157,6 +160,7 @@ public sealed partial class MainWindow : Window
             using var client = new AirOsClient(AllowInvalidCertificate.IsChecked == true);
             var r = await client.ConnectAndReadAsync(AirOsHost.Text ?? "", AirOsUser.Text ?? "", AirOsPassword.Text ?? "");
             _lastAirOs = r;
+            _lastMode = "standard";
             ExportReportButton.IsEnabled = true;
             var lines = new List<string>
             {
@@ -198,6 +202,7 @@ public sealed partial class MainWindow : Window
         {
             var r = await _ndt7.RunAsync();
             _lastSpeed = r;
+            _lastMode = "standard";
             ExportReportButton.IsEnabled = true;
             var location = string.Join(", ", new[] { r.City, r.Country }.Where(x => !string.IsNullOrWhiteSpace(x)));
             SpeedTestStatus.Text =
@@ -211,7 +216,7 @@ public sealed partial class MainWindow : Window
 
     private async void ExportReport(object? sender, RoutedEventArgs e)
     {
-        var json = ReportBuilder.Build(_sessionStartedAt, _lastQuick, _lastSpeed, _lastAirOs);
+        var json = ReportBuilder.Build(_sessionStartedAt, _lastQuick, _lastSpeed, _lastAirOs, _lastMode);
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = "Export Netsira diagnostic report",
