@@ -18,7 +18,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import io.github.shadowur0.netsira.core.RfCalculators
 import io.github.shadowur0.netsira.devices.AirOsClient
+import io.github.shadowur0.netsira.devices.AirOsLiveMonitorService
+import io.github.shadowur0.netsira.devices.AirOsLiveSample
 import io.github.shadowur0.netsira.devices.AirOsSnapshot
+import io.github.shadowur0.netsira.devices.StabilityMonitorService
+import io.github.shadowur0.netsira.devices.StabilitySummary
 import io.github.shadowur0.netsira.devices.UbntDiscovery
 import io.github.shadowur0.netsira.diagnostics.AirOsConnectionSettings
 import io.github.shadowur0.netsira.diagnostics.DiagnosticMode
@@ -30,7 +34,9 @@ import io.github.shadowur0.netsira.diagnostics.QuickDiagnostic
 import io.github.shadowur0.netsira.diagnostics.QuickDiagnosticResult
 import io.github.shadowur0.netsira.reports.AndroidReportBuilder
 import io.github.shadowur0.netsira.ui.NetsiraTheme
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
@@ -75,6 +81,14 @@ private fun NetsiraApp() {
 
     var speedRunning by remember { mutableStateOf(false) }
     var speedText by remember { mutableStateOf("Not run yet.") }
+
+    var alignmentJob by remember { mutableStateOf<Job?>(null) }
+    var alignmentText by remember { mutableStateOf("Not running.") }
+    val alignmentSamples = remember { mutableListOf<AirOsLiveSample>() }
+
+    var stabilityJob by remember { mutableStateOf<Job?>(null) }
+    var stabilityText by remember { mutableStateOf("Not run yet.") }
+    var lastStability by remember { mutableStateOf<StabilitySummary?>(null) }
 
     var discoveryRunning by remember { mutableStateOf(false) }
     var discoveryText by remember { mutableStateOf("Not scanned.") }
@@ -126,6 +140,96 @@ private fun NetsiraApp() {
                 run.errors.forEach { appendLine("Error: " + it) }
             }.trim()
             modeRunning = false
+        }
+    }
+
+    fun startAlignment() {
+        if (airOsHost.isBlank() || airOsUser.isBlank() || airOsPassword.isEmpty()) {
+            alignmentText = "Enter the airOS device address, username and password first."
+            return
+        }
+
+        alignmentJob?.cancel()
+        alignmentSamples.clear()
+        alignmentText = "Connecting…"
+        alignmentJob = scope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val client = AirOsClient()
+                    client.login(airOsHost, airOsUser, airOsPassword)
+                    AirOsLiveMonitorService().run(client) { sample ->
+                        alignmentSamples += sample
+                        withContext(Dispatchers.Main) {
+                            val chains = if (sample.chains.isEmpty()) "unavailable"
+                            else sample.chains.joinToString(", ") { it.toInt().toString() }
+                            alignmentText =
+                                "Signal: " + (sample.signalDbm?.toInt()?.toString() ?: "?") + " dBm   " +
+                                "SNR: " + (sample.snrDb?.toInt()?.toString() ?: "?") + " dB\n" +
+                                "Chains: " + chains
+                        }
+                    }
+                }
+            } catch (_: CancellationException) {
+                val summary = AirOsLiveMonitorService.summarize(alignmentSamples.toList())
+                alignmentText =
+                    "Stopped after " + summary.sampleCount + " samples.\n" +
+                    "Best/worst signal: " + (summary.bestSignalDbm?.toInt()?.toString() ?: "?") + " / " +
+                    (summary.worstSignalDbm?.toInt()?.toString() ?: "?") + " dBm\n" +
+                    "Average SNR: " + (summary.averageSnrDb?.let { String.format(Locale.US, "%.1f", it) } ?: "?") + " dB   " +
+                    "Max chain delta: " + (summary.maxChainDeltaDb?.let { String.format(Locale.US, "%.1f", it) } ?: "?") + " dB"
+            } catch (e: Exception) {
+                alignmentText = "Alignment failed: " + (e.message ?: e.javaClass.simpleName)
+            } finally {
+                alignmentJob = null
+            }
+        }
+    }
+
+    fun startStability() {
+        stabilityJob?.cancel()
+        stabilityText = "Starting 30-second stability test…"
+        stabilityJob = scope.launch {
+            try {
+                val summary = withContext(Dispatchers.IO) {
+                    var airOsClient: AirOsClient? = null
+                    if (airOsHost.isNotBlank() && airOsUser.isNotBlank() && airOsPassword.isNotEmpty()) {
+                        airOsClient = runCatching {
+                            AirOsClient().also { it.login(airOsHost, airOsUser, airOsPassword) }
+                        }.getOrNull()
+                    }
+
+                    StabilityMonitorService().run(
+                        durationMs = 30_000,
+                        intervalMs = 1_000,
+                        airOsClient = airOsClient
+                    ) { sample ->
+                        withContext(Dispatchers.Main) {
+                            stabilityText =
+                                "TCP: " + (sample.tcpLatencyMs?.let { String.format(Locale.US, "%.1f ms", it) } ?: "failed") +
+                                (sample.signalDbm?.let { "   Signal: " + it.toInt() + " dBm   SNR: " + (sample.snrDb?.toInt() ?: "?") + " dB" } ?: "")
+                        }
+                    }
+                }
+
+                lastStability = summary
+                lastMode = "stability"
+                stabilityText =
+                    "Samples: " + summary.sampleCount + "\n" +
+                    "Probe loss: " + String.format(Locale.US, "%.1f%%", summary.probeLossPercent) + "\n" +
+                    "Average latency: " + (summary.averageLatencyMs?.let { String.format(Locale.US, "%.1f ms", it) } ?: "?") + "\n" +
+                    "Jitter: " + (summary.jitterMs?.let { String.format(Locale.US, "%.1f ms", it) } ?: "?") + "\n" +
+                    "Signal best/worst/spread: " +
+                    (summary.bestSignalDbm?.toInt()?.toString() ?: "?") + " / " +
+                    (summary.worstSignalDbm?.toInt()?.toString() ?: "?") + " / " +
+                    (summary.signalSpreadDb?.let { String.format(Locale.US, "%.1f", it) } ?: "?") + " dB\n" +
+                    "Average SNR: " + (summary.averageSnrDb?.let { String.format(Locale.US, "%.1f dB", it) } ?: "?")
+            } catch (_: CancellationException) {
+                stabilityText = "Stability test cancelled."
+            } catch (e: Exception) {
+                stabilityText = "Stability test failed: " + (e.message ?: e.javaClass.simpleName)
+            } finally {
+                stabilityJob = null
+            }
         }
     }
 
@@ -264,6 +368,46 @@ private fun NetsiraApp() {
                         }
                     }) { Text(if (airOsRunning) "Connecting…" else "Read device status") }
                     Text(airOsText)
+                }
+            }
+
+            item {
+                SectionCard("Antenna alignment") {
+                    Text(
+                        "Uses one airOS session and refreshes signal, SNR and chains once per second.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            enabled = alignmentJob == null,
+                            onClick = { startAlignment() }
+                        ) { Text("Start alignment") }
+                        Button(
+                            enabled = alignmentJob != null,
+                            onClick = { alignmentJob?.cancel() }
+                        ) { Text("Stop") }
+                    }
+                    Text(alignmentText)
+                }
+            }
+
+            item {
+                SectionCard("Stability monitor") {
+                    Text(
+                        "Runs repeated TCP reachability for 30 seconds and samples airOS signal/SNR when credentials are available.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            enabled = stabilityJob == null,
+                            onClick = { startStability() }
+                        ) { Text("Run 30-second test") }
+                        Button(
+                            enabled = stabilityJob != null,
+                            onClick = { stabilityJob?.cancel() }
+                        ) { Text("Cancel") }
+                    }
+                    Text(stabilityText)
                 }
             }
 
