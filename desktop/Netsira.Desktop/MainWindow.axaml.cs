@@ -13,6 +13,7 @@ public sealed partial class MainWindow : Window
 {
     private readonly QuickDiagnosticService _diagnostics = new();
     private readonly MlabNdt7Client _ndt7 = new();
+    private readonly UbntDiscoveryService _discovery = new();
     private readonly DateTimeOffset _sessionStartedAt = DateTimeOffset.UtcNow;
     private QuickDiagnosticResult? _lastQuick;
     private Ndt7Result? _lastSpeed;
@@ -43,6 +44,35 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex) { QuickTestStatus.Text = "Quick test failed: " + ex.Message; }
         finally { QuickTestButton.IsEnabled = true; }
+    }
+
+    private async void DiscoverDevices(object? sender, RoutedEventArgs e)
+    {
+        DiscoveryButton.IsEnabled = false;
+        DiscoveryStatus.Text = "Scanning local network…";
+        try
+        {
+            var devices = await _discovery.DiscoverAsync();
+            if (devices.Count == 0)
+            {
+                DiscoveryStatus.Text = "No Ubiquiti discovery replies received.";
+                return;
+            }
+
+            if (devices.Count == 1 && !string.IsNullOrWhiteSpace(devices[0].Ip))
+                AirOsHost.Text = "http://" + devices[0].Ip;
+
+            DiscoveryStatus.Text = string.Join(Environment.NewLine, devices.Select(d =>
+                $"{d.Ip ?? "no IP"} — {d.Model ?? "Ubiquiti"} — {d.Hostname ?? d.Mac}"));
+        }
+        catch (Exception ex)
+        {
+            DiscoveryStatus.Text = "Discovery failed: " + ex.Message;
+        }
+        finally
+        {
+            DiscoveryButton.IsEnabled = true;
+        }
     }
 
     private async void ReadAirOs(object? sender, RoutedEventArgs e)

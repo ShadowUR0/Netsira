@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import io.github.shadowur0.netsira.core.RfCalculators
 import io.github.shadowur0.netsira.devices.AirOsClient
 import io.github.shadowur0.netsira.devices.AirOsSnapshot
+import io.github.shadowur0.netsira.devices.UbntDiscovery
 import io.github.shadowur0.netsira.diagnostics.MlabNdt7Client
 import io.github.shadowur0.netsira.diagnostics.Ndt7Result
 import io.github.shadowur0.netsira.diagnostics.QuickDiagnostic
@@ -66,6 +67,8 @@ private fun NetsiraApp() {
     var speedRunning by remember { mutableStateOf(false) }
     var speedText by remember { mutableStateOf("Not run yet.") }
 
+    var discoveryRunning by remember { mutableStateOf(false) }
+    var discoveryText by remember { mutableStateOf("Not scanned.") }
     var airOsRunning by remember { mutableStateOf(false) }
     var airOsText by remember { mutableStateOf("Not connected.") }
     var airOsHost by remember { mutableStateOf("http://192.168.1.20") }
@@ -120,6 +123,29 @@ private fun NetsiraApp() {
             item {
                 SectionCard("airOS device status") {
                     Text("Read-only. Credentials stay in memory and are not saved.", style = MaterialTheme.typography.bodySmall)
+                    Button(enabled = !discoveryRunning, onClick = {
+                        discoveryRunning = true
+                        discoveryText = "Scanning local network…"
+                        scope.launch {
+                            discoveryText = try {
+                                val devices = UbntDiscovery.discover()
+                                if (devices.size == 1 && !devices[0].ip.isNullOrBlank()) {
+                                    airOsHost = "http://" + devices[0].ip
+                                }
+                                if (devices.isEmpty()) {
+                                    "No Ubiquiti discovery replies received."
+                                } else {
+                                    devices.joinToString("\n") {
+                                        (it.ip ?: "no IP") + " — " + (it.model ?: "Ubiquiti") + " — " + (it.hostname ?: it.mac)
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                "Discovery failed: " + (e.message ?: e.javaClass.simpleName)
+                            }
+                            discoveryRunning = false
+                        }
+                    }) { Text(if (discoveryRunning) "Scanning…" else "Discover Ubiquiti devices") }
+                    Text(discoveryText, style = MaterialTheme.typography.bodySmall)
                     OutlinedTextField(value = airOsHost, onValueChange = { airOsHost = it }, label = { Text("Device URL or IP") }, singleLine = true)
                     OutlinedTextField(value = airOsUser, onValueChange = { airOsUser = it }, label = { Text("Username") }, singleLine = true)
                     OutlinedTextField(

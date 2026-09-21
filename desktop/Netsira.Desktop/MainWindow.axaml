@@ -40,6 +40,10 @@
                     <StackPanel Spacing="12">
                         <TextBlock FontSize="18" FontWeight="SemiBold" Text="airOS device status" />
                         <TextBlock Opacity="0.75" TextWrapping="Wrap" Text="Read-only. Credentials stay in memory and are not saved." />
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button Name="DiscoveryButton" Click="DiscoverDevices" Content="Discover Ubiquiti devices" />
+                            <TextBlock Name="DiscoveryStatus" VerticalAlignment="Center" Text="Not scanned." />
+                        </StackPanel>
                         <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,10,Auto,10,Auto,10,Auto">
                             <TextBox Name="AirOsHost" Watermark="Device URL or IP" Text="http://192.168.1.20" />
                             <TextBox Grid.Column="2" Name="AirOsUser" Watermark="Username" Text="ubnt" />
