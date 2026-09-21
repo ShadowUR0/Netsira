@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 using System.Net;
-using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 
 namespace Netsira.Desktop.Devices;
@@ -73,10 +73,12 @@ public sealed class AirOsClient : IDisposable
 
     private async Task<bool> TryLoginV8Async(Uri baseUri, string username, string password, CancellationToken ct)
     {
-        using var response = await _http.PostAsJsonAsync(
+        var payload = "{\"username\":\"" + JsonEncodedText.Encode(username) +
+            "\",\"password\":\"" + JsonEncodedText.Encode(password) + "\"}";
+        using var response = await _http.PostAsync(
             new Uri(baseUri, "api/auth"),
-            new { username, password },
-            cancellationToken: ct);
+            new StringContent(payload, Encoding.UTF8, "application/json"),
+            ct);
 
         if (response.StatusCode == HttpStatusCode.NotFound) return false;
         if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
@@ -144,7 +146,7 @@ public sealed class AirOsClient : IDisposable
 
         var signal = Number(wireless, "signal") ?? Number(station, "signal") ?? Number(remote, "signal");
         var noise = Number(wireless, "noisef") ?? Number(station, "noisefloor") ?? Number(remote, "noisefloor");
-        var snr = signal.HasValue && noise.HasValue ? signal.Value - noise.Value : null;
+        double? snr = signal.HasValue && noise.HasValue ? signal.Value - noise.Value : null;
 
         var chain = ArrayNumbers(station, "chainrssi") ?? ArrayNumbers(remote, "chainrssi");
         var ethernet = FirstInterfaceWithStatus(root);
