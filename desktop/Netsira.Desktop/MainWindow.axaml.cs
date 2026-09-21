@@ -2,6 +2,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Netsira.Desktop.Core;
+using Netsira.Desktop.Devices;
 using Netsira.Desktop.Diagnostics;
 
 namespace Netsira.Desktop;
@@ -36,6 +37,39 @@ public sealed partial class MainWindow : Window
         finally { QuickTestButton.IsEnabled = true; }
     }
 
+    private async void ReadAirOs(object? sender, RoutedEventArgs e)
+    {
+        AirOsButton.IsEnabled = false;
+        AirOsStatus.Text = "Connecting…";
+        try
+        {
+            using var client = new AirOsClient(AllowInvalidCertificate.IsChecked == true);
+            var r = await client.ConnectAndReadAsync(AirOsHost.Text ?? "", AirOsUser.Text ?? "", AirOsPassword.Text ?? "");
+            var lines = new List<string>
+            {
+                $"airOS API: {r.ApiVersion}",
+                $"Model: {r.Model}",
+                $"Hostname: {r.Hostname ?? "unknown"}",
+                $"Firmware: {r.Firmware ?? "unknown"}",
+                $"Signal: {(r.SignalDbm is null ? "unavailable" : $"{r.SignalDbm:0} dBm")}",
+                $"Noise: {(r.NoiseDbm is null ? "unavailable" : $"{r.NoiseDbm:0} dBm")}",
+                $"SNR: {(r.SnrDb is null ? "unavailable" : $"{r.SnrDb:0} dB")}",
+                $"Chains: {r.ChainRssi ?? "unavailable"}",
+                $"Frequency: {(r.FrequencyMHz is null ? "unavailable" : $"{r.FrequencyMHz:0} MHz")}",
+                $"Channel width: {(r.ChannelWidthMHz is null ? "unavailable" : $"{r.ChannelWidthMHz:0} MHz")}",
+                $"TX power: {(r.TxPowerDbm is null ? "unavailable" : $"{r.TxPowerDbm:0} dBm")}",
+                $"Distance: {(r.DistanceMeters is null ? "unavailable" : $"{r.DistanceMeters:0} m")}",
+                $"TX/RX rate: {r.TxRate ?? "—"} / {r.RxRate ?? "—"}",
+                $"Ethernet: {(r.EthernetSpeedMbps is null ? "unavailable" : $"{r.EthernetSpeedMbps:0} Mb/s")} " +
+                    (r.EthernetFullDuplex is null ? "" : r.EthernetFullDuplex == true ? "full duplex" : "half duplex"),
+                $"CPU: {(r.CpuLoadPercent is null ? "unavailable" : $"{r.CpuLoadPercent:0.#}%")}"
+            };
+            AirOsStatus.Text = string.Join(Environment.NewLine, lines);
+        }
+        catch (Exception ex) { AirOsStatus.Text = "airOS read failed: " + ex.Message; }
+        finally { AirOsButton.IsEnabled = true; }
+    }
+
     private async void RunSpeedTest(object? sender, RoutedEventArgs e)
     {
         SpeedTestButton.IsEnabled = false;
@@ -47,8 +81,7 @@ public sealed partial class MainWindow : Window
             SpeedTestStatus.Text =
                 $"Download: {r.DownloadMbps:0.00} Mb/s{Environment.NewLine}" +
                 $"Upload: {r.UploadMbps:0.00} Mb/s{Environment.NewLine}" +
-                $"Server: {r.Machine}" +
-                (string.IsNullOrEmpty(location) ? "" : $" ({location})");
+                $"Server: {r.Machine}" + (string.IsNullOrEmpty(location) ? "" : $" ({location})");
         }
         catch (Exception ex) { SpeedTestStatus.Text = "NDT7 test failed: " + ex.Message; }
         finally { SpeedTestButton.IsEnabled = true; }
