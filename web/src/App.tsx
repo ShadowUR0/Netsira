@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { IconActivityHeartbeat, IconAntennaBars5, IconCalculator, IconHistory, IconSettings } from '@tabler/icons-react'
 import { runWebQuickTest } from './diagnostics/quick'
+import { runNdt7 } from './diagnostics/ndt7'
 import { fsplDb } from './core/rf'
 
 const nav = [
@@ -14,13 +15,15 @@ const nav = [
 
 export function App() {
   const [quick, setQuick] = useState('Not run yet.')
-  const [running, setRunning] = useState(false)
+  const [quickRunning, setQuickRunning] = useState(false)
+  const [speed, setSpeed] = useState('Not run yet.')
+  const [speedRunning, setSpeedRunning] = useState(false)
   const [distance, setDistance] = useState('1')
   const [frequency, setFrequency] = useState('5800')
   const [fspl, setFspl] = useState('—')
 
   async function runQuick() {
-    setRunning(true)
+    setQuickRunning(true)
     setQuick('Running…')
     const r = await runWebQuickTest()
     setQuick([
@@ -29,7 +32,25 @@ export function App() {
       'Request time: ' + (r.latencyMs === null ? 'unavailable' : r.latencyMs.toFixed(1) + ' ms'),
       r.finding,
     ].join('\n'))
-    setRunning(false)
+    setQuickRunning(false)
+  }
+
+  async function runSpeed() {
+    setSpeedRunning(true)
+    setSpeed('Locating M-Lab server and running download/upload…')
+    try {
+      const r = await runNdt7()
+      const location = [r.city, r.country].filter(Boolean).join(', ')
+      setSpeed(
+        'Download: ' + r.downloadMbps.toFixed(2) + ' Mb/s\n' +
+        'Upload: ' + r.uploadMbps.toFixed(2) + ' Mb/s\n' +
+        'Server: ' + r.machine + (location ? ' (' + location + ')' : '')
+      )
+    } catch (error) {
+      setSpeed('NDT7 test failed: ' + (error instanceof Error ? error.message : 'unknown error'))
+    } finally {
+      setSpeedRunning(false)
+    }
   }
 
   function calculate() {
@@ -54,17 +75,27 @@ export function App() {
           </div>
         </div>
       </aside>
+
       <div className="page-wrapper">
         <div className="page-header d-print-none"><div className="container-xl">
           <h2 className="page-title">Diagnostics</h2>
           <div className="text-secondary mt-1">The web edition only runs diagnostics browsers can safely expose.</div>
         </div></div>
+
         <div className="page-body"><div className="container-xl"><div className="row row-cards">
           <div className="col-lg-6"><div className="card h-100"><div className="card-body">
             <h3 className="card-title">Quick test</h3>
-            <button className="btn btn-primary mb-3" disabled={running} onClick={runQuick}>{running ? 'Running…' : 'Run quick test'}</button>
+            <button className="btn btn-primary mb-3" disabled={quickRunning} onClick={runQuick}>{quickRunning ? 'Running…' : 'Run quick test'}</button>
             <pre className="diagnostic-output">{quick}</pre>
           </div></div></div>
+
+          <div className="col-lg-6"><div className="card h-100"><div className="card-body">
+            <h3 className="card-title">Internet throughput (M-Lab NDT7)</h3>
+            <p className="text-secondary">Optional. Measurement Lab records measurement metadata including your public IP address.</p>
+            <button className="btn btn-primary mb-3" disabled={speedRunning} onClick={runSpeed}>{speedRunning ? 'Running…' : 'Run download + upload test'}</button>
+            <pre className="diagnostic-output">{speed}</pre>
+          </div></div></div>
+
           <div className="col-lg-6"><div className="card h-100"><div className="card-body">
             <h3 className="card-title">FSPL calculator</h3>
             <div className="mb-3"><label className="form-label">Distance (km)</label><input className="form-control" value={distance} onChange={(e) => setDistance(e.target.value)} inputMode="decimal" /></div>
