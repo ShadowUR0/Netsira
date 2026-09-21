@@ -1,0 +1,35 @@
+{
+  "version": "0.1.0",
+  "alignment": {
+    "samples": [
+      {"signalDbm": -61.0, "snrDb": 22.0, "chains": [-62.0, -60.0]},
+      {"signalDbm": -58.0, "snrDb": 25.0, "chains": [-60.0, -56.0]},
+      {"signalDbm": -63.0, "snrDb": 20.0, "chains": [-68.0, -59.0]}
+    ],
+    "expected": {
+      "sampleCount": 3,
+      "bestSignalDbm": -58.0,
+      "worstSignalDbm": -63.0,
+      "averageSnrDb": 22.3333333333,
+      "maxChainDeltaDb": 9.0
+    }
+  },
+  "stability": {
+    "samples": [
+      {"tcpLatencyMs": 20.0, "signalDbm": -61.0, "snrDb": 22.0},
+      {"tcpLatencyMs": 30.0, "signalDbm": -59.0, "snrDb": 24.0},
+      {"tcpLatencyMs": null, "signalDbm": -63.0, "snrDb": 20.0},
+      {"tcpLatencyMs": 25.0, "signalDbm": -60.0, "snrDb": 23.0}
+    ],
+    "expected": {
+      "sampleCount": 4,
+      "probeLossPercent": 25.0,
+      "averageLatencyMs": 25.0,
+      "jitterMs": 7.5,
+      "bestSignalDbm": -59.0,
+      "worstSignalDbm": -63.0,
+      "signalSpreadDb": 4.0,
+      "averageSnrDb": 22.25
+    }
+  }
+}
