@@ -4,6 +4,8 @@ package io.github.shadowur0.netsira
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
@@ -16,12 +18,17 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import io.github.shadowur0.netsira.core.RfCalculators
 import io.github.shadowur0.netsira.devices.AirOsClient
+import io.github.shadowur0.netsira.devices.AirOsSnapshot
 import io.github.shadowur0.netsira.diagnostics.MlabNdt7Client
+import io.github.shadowur0.netsira.diagnostics.Ndt7Result
 import io.github.shadowur0.netsira.diagnostics.QuickDiagnostic
+import io.github.shadowur0.netsira.diagnostics.QuickDiagnosticResult
+import io.github.shadowur0.netsira.reports.AndroidReportBuilder
 import io.github.shadowur0.netsira.ui.NetsiraTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.Instant
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
@@ -36,6 +43,22 @@ class MainActivity : ComponentActivity() {
 private fun NetsiraApp() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val sessionStartedAt = remember { Instant.now().toString() }
+    var pendingReport by remember { mutableStateOf("") }
+    var lastQuick by remember { mutableStateOf<QuickDiagnosticResult?>(null) }
+    var lastSpeed by remember { mutableStateOf<Ndt7Result?>(null) }
+    var lastAirOs by remember { mutableStateOf<AirOsSnapshot?>(null) }
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null && pendingReport.isNotEmpty()) {
+            runCatching {
+                context.contentResolver.openOutputStream(uri)?.use {
+                    it.write(pendingReport.toByteArray(Charsets.UTF_8))
+                }
+            }
+        }
+    }
 
     var quickRunning by remember { mutableStateOf(false) }
     var quickText by remember { mutableStateOf("Not run yet.") }
@@ -62,6 +85,15 @@ private fun NetsiraApp() {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item { Text("Diagnostics", style = MaterialTheme.typography.headlineMedium) }
+            item {
+                Button(
+                    enabled = lastQuick != null || lastSpeed != null || lastAirOs != null,
+                    onClick = {
+                        pendingReport = AndroidReportBuilder.build(sessionStartedAt, lastQuick, lastSpeed, lastAirOs)
+                        exportLauncher.launch("netsira-report-" + System.currentTimeMillis() + ".json")
+                    }
+                ) { Text("Export report") }
+            }
 
             item {
                 SectionCard("Quick test") {
@@ -103,6 +135,7 @@ private fun NetsiraApp() {
                         scope.launch {
                             airOsText = try {
                                 val r = withContext(Dispatchers.IO) { AirOsClient().connectAndRead(airOsHost, airOsUser, airOsPassword) }
+                                lastAirOs = r
                                 buildString {
                                     appendLine("airOS API: " + r.apiVersion)
                                     appendLine("Model: " + r.model)
@@ -137,6 +170,7 @@ private fun NetsiraApp() {
                         scope.launch {
                             speedText = try {
                                 val r = MlabNdt7Client().run()
+                                lastSpeed = r
                                 val location = listOfNotNull(r.city, r.country).joinToString(", ")
                                 "Download: " + String.format(Locale.US, "%.2f Mb/s", r.downloadMbps) + "\n" +
                                     "Upload: " + String.format(Locale.US, "%.2f Mb/s", r.uploadMbps) + "\n" +
