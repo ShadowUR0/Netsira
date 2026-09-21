@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "alignment": {
+    "defaultIntervalMs": 1000,
+    "summary": ["sampleCount", "bestSignalDbm", "worstSignalDbm", "averageSnrDb", "maxChainDeltaDb"]
+  },
+  "stability": {
+    "defaultDurationSeconds": 30,
+    "defaultIntervalMs": 1000,
+    "summary": [
+      "sampleCount",
+      "probeLossPercent",
+      "averageLatencyMs",
+      "jitterMs",
+      "bestSignalDbm",
+      "worstSignalDbm",
+      "signalSpreadDb",
+      "averageSnrDb"
+    ]
+  },
+  "rules": [
+    "airOS login happens once per monitoring session",
+    "status polling reuses the authenticated session",
+    "a failed sample does not abort the entire monitoring session unless authentication is rejected",
+    "raw credentials are never stored in samples or reports"
+  ]
+}
