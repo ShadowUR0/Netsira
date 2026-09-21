@@ -1,0 +1,36 @@
+{
+  "version": "0.1.0",
+  "thresholds": {
+    "quick": {
+      "lossProblemPercent": 20,
+      "latencyWarningMs": 200,
+      "jitterWarningMs": 50
+    },
+    "airOs": {
+      "snrProblemBelowDb": 10,
+      "snrWarningBelowDb": 20,
+      "chainImbalanceWarningDb": 8,
+      "cpuWarningPercent": 90
+    }
+  },
+  "codes": [
+    "NET_NO_ACTIVE",
+    "DNS_RESOLUTION_FAILED",
+    "CONNECT_LOSS_HIGH",
+    "CONNECT_LOSS_PRESENT",
+    "CONNECT_LATENCY_HIGH",
+    "CONNECT_JITTER_HIGH",
+    "QUICK_NO_OBVIOUS_ISSUE",
+    "CPE_SNR_VERY_LOW",
+    "CPE_SNR_LOW",
+    "CPE_CHAIN_IMBALANCE",
+    "CPE_HALF_DUPLEX",
+    "CPE_CPU_HIGH",
+    "CPE_NO_OBVIOUS_ISSUE"
+  ],
+  "notes": [
+    "Thresholds are diagnostic heuristics, not universal service-quality definitions.",
+    "A finding must include the measurements that triggered it.",
+    "Netsira must not assign blame to an untested stage."
+  ]
+}

@@ -8,11 +8,7 @@ namespace Netsira.Desktop.Reports;
 
 public static class ReportBuilder
 {
-    public static string Build(
-        DateTimeOffset startedAt,
-        QuickDiagnosticResult? quick,
-        Ndt7Result? speed,
-        AirOsSnapshot? airOs)
+    public static string Build(DateTimeOffset startedAt, QuickDiagnosticResult? quick, Ndt7Result? speed, AirOsSnapshot? airOs)
     {
         var stages = new JsonArray();
         var findings = new JsonArray();
@@ -34,11 +30,7 @@ public static class ReportBuilder
             stages.Add(new JsonObject
             {
                 ["id"] = "internet",
-                ["status"] = !quick.DnsOk || quick.LossPercent >= 20
-                    ? "problem"
-                    : quick.LossPercent > 0 || quick.AverageLatencyMs >= 200 || quick.JitterMs >= 50
-                        ? "warning"
-                        : "ok",
+                ["status"] = FindingEngine.StageStatus(quick.Findings),
                 ["metrics"] = new JsonObject
                 {
                     ["averageTcpConnectMs"] = quick.AverageLatencyMs,
@@ -49,23 +41,7 @@ public static class ReportBuilder
                 }
             });
 
-            foreach (var text in quick.Findings)
-            {
-                var severity = text.StartsWith("Problem:", StringComparison.OrdinalIgnoreCase)
-                    ? "problem"
-                    : text.StartsWith("Warning:", StringComparison.OrdinalIgnoreCase) ? "warning" : "info";
-                findings.Add(new JsonObject
-                {
-                    ["code"] = "QUICK_TEST_RESULT",
-                    ["severity"] = severity,
-                    ["title"] = text,
-                    ["evidence"] = new JsonArray(
-                        JsonValue.Create("dnsOk=" + quick.DnsOk),
-                        JsonValue.Create("lossPercent=" + quick.LossPercent.ToString("0.##")),
-                        JsonValue.Create("averageTcpConnectMs=" + (quick.AverageLatencyMs?.ToString("0.##") ?? "null")),
-                        JsonValue.Create("jitterMs=" + (quick.JitterMs?.ToString("0.##") ?? "null")))
-                });
-            }
+            AddFindings(findings, quick.Findings);
         }
         else if (speed is not null)
         {
@@ -83,10 +59,11 @@ public static class ReportBuilder
 
         if (airOs is not null)
         {
+            var cpeFindings = FindingEngine.ForAirOs(airOs);
             stages.Add(new JsonObject
             {
                 ["id"] = "cpe",
-                ["status"] = "info",
+                ["status"] = FindingEngine.StageStatus(cpeFindings),
                 ["metrics"] = new JsonObject
                 {
                     ["apiVersion"] = airOs.ApiVersion,
@@ -106,6 +83,7 @@ public static class ReportBuilder
                     ["cpuLoadPercent"] = airOs.CpuLoadPercent
                 }
             });
+            AddFindings(findings, cpeFindings);
         }
 
         var metadata = new JsonObject();
@@ -131,5 +109,21 @@ public static class ReportBuilder
         };
 
         return report.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    private static void AddFindings(JsonArray target, IEnumerable<DiagnosticFinding> source)
+    {
+        foreach (var finding in source)
+        {
+            var evidence = new JsonArray();
+            foreach (var item in finding.Evidence) evidence.Add(item);
+            target.Add(new JsonObject
+            {
+                ["code"] = finding.Code,
+                ["severity"] = finding.Severity,
+                ["title"] = finding.Title,
+                ["evidence"] = evidence
+            });
+        }
     }
 }
