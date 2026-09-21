@@ -70,11 +70,37 @@
                         </Grid>
                     </Border>
 
+                    <Border Padding="14" CornerRadius="12" BorderThickness="1" BorderBrush="#475569">
+                        <Grid ColumnDefinitions="*,36,*,36,*">
+                            <Border Padding="12" CornerRadius="10" Background="#13213A">
+                                <StackPanel>
+                                    <TextBlock FontWeight="Bold" Text="1  Computer" />
+                                    <TextBlock FontSize="12" Opacity="0.65" Text="Ready" />
+                                </StackPanel>
+                            </Border>
+                            <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Opacity="0.5" Text="→" />
+                            <Border Grid.Column="2" Padding="12" CornerRadius="10" Background="#13213A">
+                                <StackPanel>
+                                    <TextBlock FontWeight="Bold" Text="2  Network" />
+                                    <TextBlock Name="PathNetworkState" FontSize="12" Opacity="0.75" Text="Not tested" />
+                                </StackPanel>
+                            </Border>
+                            <TextBlock Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Center" Opacity="0.5" Text="→" />
+                            <Border Grid.Column="4" Padding="12" CornerRadius="10" Background="#13213A">
+                                <StackPanel>
+                                    <TextBlock FontWeight="Bold" Text="3  Internet" />
+                                    <TextBlock Name="PathInternetState" FontSize="12" Opacity="0.75" Text="Not tested" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
+
                     <Grid ColumnDefinitions="*,12,*,12,*,12,*">
                         <Border Padding="16" CornerRadius="12" BorderThickness="1" BorderBrush="#475569">
                             <StackPanel>
                                 <TextBlock Opacity="0.6" FontSize="12" Text="INTERNET" />
                                 <TextBlock Name="InternetMetric" FontSize="22" FontWeight="Bold" Text="—" />
+                                <ProgressBar Name="InternetHealthBar" Height="6" Margin="0,8,0,5" Minimum="0" Maximum="100" Value="0" />
                                 <TextBlock Opacity="0.6" FontSize="12" Text="Reachability / latency" />
                             </StackPanel>
                         </Border>
@@ -82,7 +108,8 @@
                             <StackPanel>
                                 <TextBlock Opacity="0.6" FontSize="12" Text="LOSS" />
                                 <TextBlock Name="LossMetric" FontSize="22" FontWeight="Bold" Text="—" />
-                                <TextBlock Opacity="0.6" FontSize="12" Text="Quick probes" />
+                                <ProgressBar Name="LossHealthBar" Height="6" Margin="0,8,0,5" Minimum="0" Maximum="100" Value="0" />
+                                <TextBlock Opacity="0.6" FontSize="12" Text="Successful probes" />
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="4" Padding="16" CornerRadius="12" BorderThickness="1" BorderBrush="#475569">
@@ -96,6 +123,7 @@
                             <StackPanel>
                                 <TextBlock Opacity="0.6" FontSize="12" Text="STABILITY" />
                                 <TextBlock Name="StabilityMetric" FontSize="22" FontWeight="Bold" Text="—" />
+                                <ProgressBar Name="StabilityHealthBar" Height="6" Margin="0,8,0,5" Minimum="0" Maximum="100" Value="0" />
                                 <TextBlock Opacity="0.6" FontSize="12" Text="Successful probes" />
                             </StackPanel>
                         </Border>
@@ -203,14 +231,16 @@
                             <StackPanel>
                                 <TextBlock Opacity="0.6" FontSize="12" Text="SIGNAL" />
                                 <TextBlock Name="SignalMetric" FontSize="22" FontWeight="Bold" Text="—" />
-                                <TextBlock Opacity="0.6" FontSize="12" Text="Received power" />
+                                <ProgressBar Name="SignalQualityBar" Height="6" Margin="0,8,0,5" Minimum="0" Maximum="100" Value="0" />
+                                <TextBlock Opacity="0.6" FontSize="12" Text="Visual scale: -90 to -50 dBm" />
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="2" Padding="16" CornerRadius="12" BorderThickness="1" BorderBrush="#475569">
                             <StackPanel>
                                 <TextBlock Opacity="0.6" FontSize="12" Text="SNR" />
                                 <TextBlock Name="SnrMetric" FontSize="22" FontWeight="Bold" Text="—" />
-                                <TextBlock Opacity="0.6" FontSize="12" Text="Signal quality" />
+                                <ProgressBar Name="SnrQualityBar" Height="6" Margin="0,8,0,5" Minimum="0" Maximum="100" Value="0" />
+                                <TextBlock Opacity="0.6" FontSize="12" Text="Visual scale: 0 to 30 dB" />
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="4" Padding="16" CornerRadius="12" BorderThickness="1" BorderBrush="#475569">
@@ -224,6 +254,7 @@
                             <StackPanel>
                                 <TextBlock Opacity="0.6" FontSize="12" Text="CPU" />
                                 <TextBlock Name="CpuMetric" FontSize="22" FontWeight="Bold" Text="—" />
+                                <ProgressBar Name="CpuLoadBar" Height="6" Margin="0,8,0,5" Minimum="0" Maximum="100" Value="0" />
                                 <TextBlock Opacity="0.6" FontSize="12" Text="Device load" />
                             </StackPanel>
                         </Border>

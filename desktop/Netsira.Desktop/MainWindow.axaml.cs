@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Netsira.Desktop.Core;
@@ -26,22 +27,37 @@ public sealed partial class MainWindow : Window
     private AlignmentSummary? _lastAlignment;
     private StabilitySummary? _lastStability;
 
-    public MainWindow() => InitializeComponent();
+    public MainWindow()
+    {
+        InitializeComponent();
+        SetNavigationState(DiagnosticsNavButton);
+    }
 
-    private void ShowPage(Control page)
+    private void ShowPage(Control page, Button activeButton)
     {
         DiagnosticsPage.IsVisible = ReferenceEquals(page, DiagnosticsPage);
         DevicesPage.IsVisible = ReferenceEquals(page, DevicesPage);
         CalculatorsPage.IsVisible = ReferenceEquals(page, CalculatorsPage);
         HistoryPage.IsVisible = ReferenceEquals(page, HistoryPage);
         SettingsPage.IsVisible = ReferenceEquals(page, SettingsPage);
+        SetNavigationState(activeButton);
     }
 
-    private void NavigateDiagnostics(object? sender, RoutedEventArgs e) => ShowPage(DiagnosticsPage);
-    private void NavigateDevices(object? sender, RoutedEventArgs e) => ShowPage(DevicesPage);
-    private void NavigateCalculators(object? sender, RoutedEventArgs e) => ShowPage(CalculatorsPage);
-    private void NavigateHistory(object? sender, RoutedEventArgs e) => ShowPage(HistoryPage);
-    private void NavigateSettings(object? sender, RoutedEventArgs e) => ShowPage(SettingsPage);
+    private void SetNavigationState(Button activeButton)
+    {
+        foreach (var button in new[] { DiagnosticsNavButton, DevicesNavButton, CalculatorsNavButton, HistoryNavButton, SettingsNavButton })
+        {
+            var active = ReferenceEquals(button, activeButton);
+            button.Background = new SolidColorBrush(Color.Parse(active ? "#1E3A5F" : "#0F172A"));
+            button.Foreground = new SolidColorBrush(Color.Parse(active ? "#FFFFFF" : "#CBD5E1"));
+        }
+    }
+
+    private void NavigateDiagnostics(object? sender, RoutedEventArgs e) => ShowPage(DiagnosticsPage, DiagnosticsNavButton);
+    private void NavigateDevices(object? sender, RoutedEventArgs e) => ShowPage(DevicesPage, DevicesNavButton);
+    private void NavigateCalculators(object? sender, RoutedEventArgs e) => ShowPage(CalculatorsPage, CalculatorsNavButton);
+    private void NavigateHistory(object? sender, RoutedEventArgs e) => ShowPage(HistoryPage, HistoryNavButton);
+    private void NavigateSettings(object? sender, RoutedEventArgs e) => ShowPage(SettingsPage, SettingsNavButton);
 
     private void UpdateQuickVisuals(QuickDiagnosticResult result)
     {
@@ -52,6 +68,10 @@ public sealed partial class MainWindow : Window
             ? (result.AverageLatencyMs is null ? "Reachable" : $"{result.AverageLatencyMs:0} ms")
             : "Unavailable";
         LossMetric.Text = $"{result.LossPercent:0}%";
+        InternetHealthBar.Value = result.HasNetwork && result.DnsOk ? 100 : 0;
+        LossHealthBar.Value = Math.Clamp(100 - result.LossPercent, 0, 100);
+        PathNetworkState.Text = result.HasNetwork ? "Connected" : "Problem";
+        PathInternetState.Text = result.DnsOk ? "Reachable" : "Problem";
         QuickTestStatus.Text =
             string.Join(Environment.NewLine, result.Findings.Select(x => "• " + x.Title)) +
             Environment.NewLine +
@@ -208,6 +228,9 @@ public sealed partial class MainWindow : Window
             SnrMetric.Text = r.SnrDb is null ? "—" : $"{r.SnrDb:0} dB";
             EthernetMetric.Text = r.EthernetSpeedMbps is null ? "—" : $"{r.EthernetSpeedMbps:0} Mb/s";
             CpuMetric.Text = r.CpuLoadPercent is null ? "—" : $"{r.CpuLoadPercent:0}%";
+            SignalQualityBar.Value = r.SignalDbm is null ? 0 : Math.Clamp((r.SignalDbm.Value + 90) / 40 * 100, 0, 100);
+            SnrQualityBar.Value = r.SnrDb is null ? 0 : Math.Clamp(r.SnrDb.Value / 30 * 100, 0, 100);
+            CpuLoadBar.Value = r.CpuLoadPercent is null ? 0 : Math.Clamp(r.CpuLoadPercent.Value, 0, 100);
             DeviceFindingStatus.Text = string.Join(Environment.NewLine, FindingEngine.ForAirOs(r).Select(x => "• " + x.Title));
             var lines = new List<string>
             {
@@ -355,6 +378,7 @@ public sealed partial class MainWindow : Window
             _lastMode = "stability";
             ExportReportButton.IsEnabled = true;
             StabilityMetric.Text = $"{Math.Max(0, 100 - summary.ProbeLossPercent):0}%";
+            StabilityHealthBar.Value = Math.Clamp(100 - summary.ProbeLossPercent, 0, 100);
             StabilityStatus.Text =
                 $"Samples: {summary.SampleCount}{Environment.NewLine}" +
                 $"Probe loss: {summary.ProbeLossPercent:0.0}%{Environment.NewLine}" +
