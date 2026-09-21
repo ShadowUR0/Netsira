@@ -20,10 +20,13 @@
         </Border>
         <ScrollViewer Grid.Column="1">
             <StackPanel Margin="32" Spacing="20">
-                <StackPanel>
-                    <TextBlock FontSize="28" FontWeight="SemiBold" Text="Diagnostics" />
-                    <TextBlock Margin="0,6,0,0" Opacity="0.65" Text="Local checks, CPE status, public throughput, and RF calculators." />
-                </StackPanel>
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock FontSize="28" FontWeight="SemiBold" Text="Diagnostics" />
+                        <TextBlock Margin="0,6,0,0" Opacity="0.65" Text="Local checks, CPE status, public throughput, and RF calculators." />
+                    </StackPanel>
+                    <Button Grid.Column="1" Name="ExportReportButton" IsEnabled="False" Click="ExportReport" Content="Export report" />
+                </Grid>
 
                 <Border Padding="20" CornerRadius="10" BorderThickness="1" BorderBrush="#CBD5E1">
                     <StackPanel Spacing="12">
@@ -51,8 +54,7 @@
                 <Border Padding="20" CornerRadius="10" BorderThickness="1" BorderBrush="#CBD5E1">
                     <StackPanel Spacing="12">
                         <TextBlock FontSize="18" FontWeight="SemiBold" Text="Internet throughput (M-Lab NDT7)" />
-                        <TextBlock TextWrapping="Wrap" Opacity="0.75"
-                                   Text="Optional. Measurement Lab records measurement metadata including your public IP address." />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.75" Text="Optional. Measurement Lab records measurement metadata including your public IP address." />
                         <Button Name="SpeedTestButton" HorizontalAlignment="Left" Click="RunSpeedTest" Content="Run download + upload test" />
                         <TextBlock Name="SpeedTestStatus" TextWrapping="Wrap" Text="Not run yet." />
                     </StackPanel>

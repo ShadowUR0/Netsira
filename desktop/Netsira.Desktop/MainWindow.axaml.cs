@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 using Netsira.Desktop.Core;
 using Netsira.Desktop.Devices;
 using Netsira.Desktop.Diagnostics;
+using Netsira.Desktop.Reports;
 
 namespace Netsira.Desktop;
 
@@ -11,6 +13,10 @@ public sealed partial class MainWindow : Window
 {
     private readonly QuickDiagnosticService _diagnostics = new();
     private readonly MlabNdt7Client _ndt7 = new();
+    private readonly DateTimeOffset _sessionStartedAt = DateTimeOffset.UtcNow;
+    private QuickDiagnosticResult? _lastQuick;
+    private Ndt7Result? _lastSpeed;
+    private AirOsSnapshot? _lastAirOs;
 
     public MainWindow() => InitializeComponent();
 
@@ -21,6 +27,8 @@ public sealed partial class MainWindow : Window
         try
         {
             var r = await _diagnostics.RunAsync();
+            _lastQuick = r;
+            ExportReportButton.IsEnabled = true;
             var lines = new List<string>
             {
                 $"Network: {(r.HasNetwork ? "available" : "unavailable")}",
@@ -45,6 +53,8 @@ public sealed partial class MainWindow : Window
         {
             using var client = new AirOsClient(AllowInvalidCertificate.IsChecked == true);
             var r = await client.ConnectAndReadAsync(AirOsHost.Text ?? "", AirOsUser.Text ?? "", AirOsPassword.Text ?? "");
+            _lastAirOs = r;
+            ExportReportButton.IsEnabled = true;
             var lines = new List<string>
             {
                 $"airOS API: {r.ApiVersion}",
@@ -77,6 +87,8 @@ public sealed partial class MainWindow : Window
         try
         {
             var r = await _ndt7.RunAsync();
+            _lastSpeed = r;
+            ExportReportButton.IsEnabled = true;
             var location = string.Join(", ", new[] { r.City, r.Country }.Where(x => !string.IsNullOrWhiteSpace(x)));
             SpeedTestStatus.Text =
                 $"Download: {r.DownloadMbps:0.00} Mb/s{Environment.NewLine}" +
@@ -85,6 +97,26 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex) { SpeedTestStatus.Text = "NDT7 test failed: " + ex.Message; }
         finally { SpeedTestButton.IsEnabled = true; }
+    }
+
+    private async void ExportReport(object? sender, RoutedEventArgs e)
+    {
+        var json = ReportBuilder.Build(_sessionStartedAt, _lastQuick, _lastSpeed, _lastAirOs);
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Export Netsira diagnostic report",
+            SuggestedFileName = "netsira-report-" + DateTimeOffset.Now.ToString("yyyyMMdd-HHmmss") + ".json",
+            DefaultExtension = "json",
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType("JSON report") { Patterns = new[] { "*.json" } }
+            }
+        });
+        if (file is null) return;
+
+        await using var stream = await file.OpenWriteAsync();
+        using var writer = new StreamWriter(stream);
+        await writer.WriteAsync(json);
     }
 
     private void CalculateFspl(object? sender, RoutedEventArgs e)
