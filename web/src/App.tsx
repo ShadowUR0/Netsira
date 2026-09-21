@@ -34,7 +34,7 @@ export function App() {
       'Browser online: ' + (r.online ? 'yes' : 'no'),
       'HTTPS reachability: ' + (r.httpsReachable ? 'ok' : 'failed'),
       'Request time: ' + (r.latencyMs === null ? 'unavailable' : r.latencyMs.toFixed(1) + ' ms'),
-      r.finding,
+      ...r.findings.map((finding) => "• " + finding.title),
     ].join('\n'))
     setQuickRunning(false)
   }

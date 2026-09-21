@@ -2,6 +2,8 @@
 package io.github.shadowur0.netsira.reports
 
 import io.github.shadowur0.netsira.devices.AirOsSnapshot
+import io.github.shadowur0.netsira.diagnostics.DiagnosticFinding
+import io.github.shadowur0.netsira.diagnostics.FindingEngine
 import io.github.shadowur0.netsira.diagnostics.Ndt7Result
 import io.github.shadowur0.netsira.diagnostics.QuickDiagnosticResult
 import org.json.JSONArray
@@ -30,15 +32,10 @@ object AndroidReportBuilder {
                         .put("dnsOk", quick.dnsOk))
             )
 
-            val internetStatus = when {
-                !quick.dnsOk || quick.lossPercent >= 20 -> "problem"
-                quick.lossPercent > 0 || (quick.averageLatencyMs ?: 0.0) >= 200 || (quick.jitterMs ?: 0.0) >= 50 -> "warning"
-                else -> "ok"
-            }
             stages.put(
                 JSONObject()
                     .put("id", "internet")
-                    .put("status", internetStatus)
+                    .put("status", FindingEngine.stageStatus(quick.findings))
                     .put("metrics", JSONObject()
                         .putNullable("averageTcpConnectMs", quick.averageLatencyMs)
                         .putNullable("jitterMs", quick.jitterMs)
@@ -46,25 +43,7 @@ object AndroidReportBuilder {
                         .putNullable("downloadMbps", speed?.downloadMbps)
                         .putNullable("uploadMbps", speed?.uploadMbps))
             )
-
-            quick.findings.forEach { text ->
-                val severity = when {
-                    text.startsWith("Problem:", ignoreCase = true) -> "problem"
-                    text.startsWith("Warning:", ignoreCase = true) -> "warning"
-                    else -> "info"
-                }
-                findings.put(
-                    JSONObject()
-                        .put("code", "QUICK_TEST_RESULT")
-                        .put("severity", severity)
-                        .put("title", text)
-                        .put("evidence", JSONArray()
-                            .put("dnsOk=" + quick.dnsOk)
-                            .put("lossPercent=" + quick.lossPercent)
-                            .put("averageTcpConnectMs=" + (quick.averageLatencyMs ?: "null"))
-                            .put("jitterMs=" + (quick.jitterMs ?: "null")))
-                )
-            }
+            addFindings(findings, quick.findings)
         } else if (speed != null) {
             stages.put(
                 JSONObject()
@@ -77,10 +56,11 @@ object AndroidReportBuilder {
         }
 
         if (airOs != null) {
+            val cpeFindings = FindingEngine.forAirOs(airOs)
             stages.put(
                 JSONObject()
                     .put("id", "cpe")
-                    .put("status", "info")
+                    .put("status", FindingEngine.stageStatus(cpeFindings))
                     .put("metrics", JSONObject()
                         .put("apiVersion", airOs.apiVersion)
                         .put("model", airOs.model)
@@ -98,6 +78,7 @@ object AndroidReportBuilder {
                         .putNullable("ethernetFullDuplex", airOs.ethernetFullDuplex)
                         .putNullable("cpuLoadPercent", airOs.cpuLoadPercent))
             )
+            addFindings(findings, cpeFindings)
         }
 
         val metadata = JSONObject()
@@ -119,6 +100,20 @@ object AndroidReportBuilder {
             .put("findings", findings)
             .put("metadata", metadata)
             .toString(2)
+    }
+
+    private fun addFindings(target: JSONArray, source: List<DiagnosticFinding>) {
+        source.forEach { finding ->
+            val evidence = JSONArray()
+            finding.evidence.forEach(evidence::put)
+            target.put(
+                JSONObject()
+                    .put("code", finding.code)
+                    .put("severity", finding.severity)
+                    .put("title", finding.title)
+                    .put("evidence", evidence)
+            )
+        }
     }
 
     private fun JSONObject.putNullable(key: String, value: Any?): JSONObject =

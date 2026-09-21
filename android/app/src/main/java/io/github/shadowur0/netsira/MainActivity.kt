@@ -20,7 +20,7 @@ import io.github.shadowur0.netsira.core.RfCalculators
 import io.github.shadowur0.netsira.devices.AirOsClient
 import io.github.shadowur0.netsira.devices.AirOsSnapshot
 import io.github.shadowur0.netsira.devices.UbntDiscovery
-import io.github.shadowur0.netsira.diagnostics.MlabNdt7Client
+import io.github.shadowur0.netsira.diagnostics.FindingEngine\nimport io.github.shadowur0.netsira.diagnostics.MlabNdt7Client
 import io.github.shadowur0.netsira.diagnostics.Ndt7Result
 import io.github.shadowur0.netsira.diagnostics.QuickDiagnostic
 import io.github.shadowur0.netsira.diagnostics.QuickDiagnosticResult
@@ -111,7 +111,7 @@ private fun NetsiraApp() {
                                 appendLine("Latency: " + (r.averageLatencyMs?.let { String.format(Locale.US, "%.1f ms", it) } ?: "unavailable"))
                                 appendLine("Jitter: " + (r.jitterMs?.let { String.format(Locale.US, "%.1f ms", it) } ?: "unavailable"))
                                 appendLine("Probe loss: " + r.lossPercent.toInt() + "%")
-                                r.findings.forEach { appendLine("• " + it) }
+                                r.findings.forEach { appendLine("• " + it.title) }
                             }.trim()
                             quickRunning = false
                         }
@@ -176,6 +176,7 @@ private fun NetsiraApp() {
                                     appendLine("TX power: " + (r.txPowerDbm?.let { it.toInt().toString() + " dBm" } ?: "unavailable"))
                                     appendLine("Distance: " + (r.distanceMeters?.let { it.toInt().toString() + " m" } ?: "unavailable"))
                                     appendLine("Ethernet: " + (r.ethernetSpeedMbps?.let { it.toInt().toString() + " Mb/s" } ?: "unavailable"))
+                                    FindingEngine.forAirOs(r).forEach { appendLine("• " + it.title) }
                                 }.trim()
                             } catch (e: Exception) {
                                 "airOS read failed: " + (e.message ?: e.javaClass.simpleName)

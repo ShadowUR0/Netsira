@@ -19,7 +19,7 @@ data class QuickDiagnosticResult(
     val averageLatencyMs: Double?,
     val jitterMs: Double?,
     val lossPercent: Double,
-    val findings: List<String>
+    val findings: List<DiagnosticFinding>
 )
 
 class QuickDiagnostic(private val context: Context) {
@@ -35,18 +35,20 @@ class QuickDiagnostic(private val context: Context) {
             hasNetwork -> "Other"
             else -> "None"
         }
+
         val dnsOk = runCatching { InetAddress.getAllByName("example.com").isNotEmpty() }.getOrDefault(false)
         val samples = mutableListOf<Double>()
         repeat(5) { index ->
             measureTcp("1.1.1.1", 443)?.let(samples::add)
             if (index < 4) delay(120)
         }
+
         val loss = (5 - samples.size) * 20.0
         val average = samples.takeIf { it.isNotEmpty() }?.average()
         val jitter = if (samples.size >= 2) samples.zipWithNext { a, b -> abs(b - a) }.average() else null
+        val findings = FindingEngine.forQuick(hasNetwork, dnsOk, average, jitter, loss)
 
-        QuickDiagnosticResult(hasNetwork, transport, dnsOk, average, jitter, loss,
-            findings(hasNetwork, dnsOk, average, jitter, loss))
+        QuickDiagnosticResult(hasNetwork, transport, dnsOk, average, jitter, loss, findings)
     }
 
     private fun measureTcp(host: String, port: Int): Double? {
@@ -55,15 +57,5 @@ class QuickDiagnostic(private val context: Context) {
             Socket().use { it.connect(InetSocketAddress(host, port), 3000) }
             (System.nanoTime() - started) / 1_000_000.0
         }.getOrNull()
-    }
-
-    private fun findings(network: Boolean, dns: Boolean, latency: Double?, jitter: Double?, loss: Double) = buildList {
-        if (!network) add("Problem: no active network was detected.")
-        if (!dns) add("Problem: DNS resolution failed.")
-        if (loss >= 20) add("Problem: " + loss.toInt() + "% of TCP probes failed.")
-        else if (loss > 0) add("Warning: " + loss.toInt() + "% of TCP probes failed.")
-        if (latency != null && latency >= 200) add("Warning: average TCP connection latency is " + latency.toInt() + " ms.")
-        if (jitter != null && jitter >= 50) add("Warning: probe jitter is " + jitter.toInt() + " ms.")
-        if (isEmpty()) add("No obvious problem was found by the quick test.")
     }
 }

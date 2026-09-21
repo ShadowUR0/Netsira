@@ -12,9 +12,14 @@ export function downloadWebReport(quick: WebQuickResult | null, speed: Ndt7Resul
       status: quick.online ? 'ok' : 'problem',
       metrics: { browserOnline: quick.online },
     })
+
+    const internetStatus = quick.findings.some(f => f.severity === 'problem')
+      ? 'problem'
+      : quick.findings.some(f => f.severity === 'warning') ? 'warning' : 'info'
+
     stages.push({
       id: 'internet',
-      status: !quick.httpsReachable ? 'problem' : quick.latencyMs !== null && quick.latencyMs >= 1000 ? 'warning' : 'ok',
+      status: internetStatus,
       metrics: {
         httpsReachable: quick.httpsReachable,
         browserRequestMs: quick.latencyMs,
@@ -25,24 +30,13 @@ export function downloadWebReport(quick: WebQuickResult | null, speed: Ndt7Resul
   } else if (speed) {
     stages.push({
       id: 'internet',
-      status: 'ok',
+      status: 'info',
       metrics: {
         downloadMbps: speed.downloadMbps,
         uploadMbps: speed.uploadMbps,
       },
     })
   }
-
-  const findings = quick ? [{
-    code: 'WEB_QUICK_RESULT',
-    severity: quick.finding.startsWith('Problem:') ? 'problem' : quick.finding.startsWith('Warning:') ? 'warning' : 'info',
-    title: quick.finding,
-    evidence: [
-      'browserOnline=' + quick.online,
-      'httpsReachable=' + quick.httpsReachable,
-      'browserRequestMs=' + (quick.latencyMs ?? 'null'),
-    ],
-  }] : []
 
   const report = {
     schemaVersion: '0.1.0',
@@ -52,7 +46,7 @@ export function downloadWebReport(quick: WebQuickResult | null, speed: Ndt7Resul
     startedAt: now,
     endedAt: now,
     stages,
-    findings,
+    findings: quick?.findings ?? [],
     metadata: speed ? {
       measurementProvider: 'Measurement Lab',
       ndt7Machine: speed.machine,
