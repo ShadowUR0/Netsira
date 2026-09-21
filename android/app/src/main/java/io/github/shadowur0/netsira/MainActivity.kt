@@ -20,6 +20,9 @@ import io.github.shadowur0.netsira.core.RfCalculators
 import io.github.shadowur0.netsira.devices.AirOsClient
 import io.github.shadowur0.netsira.devices.AirOsSnapshot
 import io.github.shadowur0.netsira.devices.UbntDiscovery
+import io.github.shadowur0.netsira.diagnostics.AirOsConnectionSettings
+import io.github.shadowur0.netsira.diagnostics.DiagnosticMode
+import io.github.shadowur0.netsira.diagnostics.DiagnosticRunService
 import io.github.shadowur0.netsira.diagnostics.FindingEngine\nimport io.github.shadowur0.netsira.diagnostics.MlabNdt7Client
 import io.github.shadowur0.netsira.diagnostics.Ndt7Result
 import io.github.shadowur0.netsira.diagnostics.QuickDiagnostic
@@ -61,6 +64,10 @@ private fun NetsiraApp() {
         }
     }
 
+    var mlabConsent by remember { mutableStateOf(false) }
+    var modeRunning by remember { mutableStateOf(false) }
+    var modeText by remember { mutableStateOf("Not run yet.") }
+
     var quickRunning by remember { mutableStateOf(false) }
     var quickText by remember { mutableStateOf("Not run yet.") }
 
@@ -79,6 +86,46 @@ private fun NetsiraApp() {
     var frequency by remember { mutableStateOf("5800") }
     var fspl by remember { mutableStateOf("—") }
 
+    fun runMode(mode: DiagnosticMode) {
+        if (!mlabConsent) {
+            modeText = "Enable the M-Lab privacy acknowledgement before running this test."
+            return
+        }
+
+        modeRunning = true
+        modeText = if (mode == DiagnosticMode.Standard) "Running standard test…" else "Running comprehensive test…"
+        scope.launch {
+            val run = DiagnosticRunService(context).run(
+                mode,
+                AirOsConnectionSettings(airOsHost, airOsUser, airOsPassword)
+            )
+            lastQuick = run.quick
+            lastSpeed = run.speed
+            if (run.airOs != null) lastAirOs = run.airOs
+
+            modeText = buildString {
+                appendLine("Mode: " + run.mode.name)
+                appendLine("Network: " + if (run.quick.hasNetwork) run.quick.transport else "unavailable")
+                appendLine("DNS: " + if (run.quick.dnsOk) "ok" else "failed")
+                appendLine("Latency: " + (run.quick.averageLatencyMs?.let { String.format(Locale.US, "%.1f ms", it) } ?: "unavailable"))
+                appendLine("Jitter: " + (run.quick.jitterMs?.let { String.format(Locale.US, "%.1f ms", it) } ?: "unavailable"))
+                appendLine("Probe loss: " + run.quick.lossPercent.toInt() + "%")
+                run.speed?.let {
+                    appendLine("Download: " + String.format(Locale.US, "%.2f Mb/s", it.downloadMbps))
+                    appendLine("Upload: " + String.format(Locale.US, "%.2f Mb/s", it.uploadMbps))
+                }
+                run.airOs?.let {
+                    appendLine("CPE: " + it.model + " — signal " + (it.signalDbm?.toInt()?.toString() ?: "?") + " dBm — SNR " + (it.snrDb?.toInt()?.toString() ?: "?") + " dB")
+                    FindingEngine.forAirOs(it).forEach { finding -> appendLine("• " + finding.title) }
+                }
+                run.quick.findings.forEach { appendLine("• " + it.title) }
+                run.skipped.forEach { appendLine("Skipped: " + it) }
+                run.errors.forEach { appendLine("Error: " + it) }
+            }.trim()
+            modeRunning = false
+        }
+    }
+
     Scaffold(topBar = {
         TopAppBar(title = { Column { Text("Netsira"); Text("Network diagnostics", style = MaterialTheme.typography.labelMedium) } })
     }) { padding ->
@@ -88,6 +135,32 @@ private fun NetsiraApp() {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item { Text("Diagnostics", style = MaterialTheme.typography.headlineMedium) }
+            item {
+                SectionCard("Test modes") {
+                    Text(
+                        "Standard and comprehensive tests include M-Lab NDT7 throughput measurement.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Row {
+                        Checkbox(checked = mlabConsent, onCheckedChange = { mlabConsent = it })
+                        Text(
+                            "I understand that M-Lab records measurement metadata including my public IP address",
+                            modifier = Modifier.padding(top = 12.dp)
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            enabled = !modeRunning,
+                            onClick = { runMode(DiagnosticMode.Standard) }
+                        ) { Text("Standard") }
+                        Button(
+                            enabled = !modeRunning,
+                            onClick = { runMode(DiagnosticMode.Comprehensive) }
+                        ) { Text("Comprehensive") }
+                    }
+                    Text(modeText)
+                }
+            }
             item {
                 Button(
                     enabled = lastQuick != null || lastSpeed != null || lastAirOs != null,
@@ -192,6 +265,10 @@ private fun NetsiraApp() {
                 SectionCard("Internet throughput (M-Lab NDT7)") {
                     Text("Optional. Measurement Lab records measurement metadata including your public IP address.", style = MaterialTheme.typography.bodySmall)
                     Button(enabled = !speedRunning, onClick = {
+                        if (!mlabConsent) {
+                            speedText = "Enable the M-Lab privacy acknowledgement above before running this test."
+                            return@Button
+                        }
                         speedRunning = true
                         speedText = "Locating M-Lab server and running download/upload…"
                         scope.launch {
