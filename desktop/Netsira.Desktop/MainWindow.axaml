@@ -30,6 +30,20 @@
 
                 <Border Padding="20" CornerRadius="10" BorderThickness="1" BorderBrush="#CBD5E1">
                     <StackPanel Spacing="12">
+                        <TextBlock FontSize="18" FontWeight="SemiBold" Text="Test modes" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.75"
+                                   Text="Standard and comprehensive tests include M-Lab NDT7 throughput measurement." />
+                        <CheckBox Name="MlabConsent" Content="I understand that M-Lab records measurement metadata including my public IP address" />
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button Name="StandardTestButton" Click="RunStandardTest" Content="Run standard test" />
+                            <Button Name="ComprehensiveTestButton" Click="RunComprehensiveTest" Content="Run comprehensive test" />
+                        </StackPanel>
+                        <TextBlock Name="ModeTestStatus" TextWrapping="Wrap" Text="Not run yet." />
+                    </StackPanel>
+                </Border>
+
+                <Border Padding="20" CornerRadius="10" BorderThickness="1" BorderBrush="#CBD5E1">
+                    <StackPanel Spacing="12">
                         <TextBlock FontSize="18" FontWeight="SemiBold" Text="Quick test" />
                         <Button Name="QuickTestButton" HorizontalAlignment="Left" Click="RunQuickTest" Content="Run quick test" />
                         <TextBlock Name="QuickTestStatus" TextWrapping="Wrap" Text="Not run yet." />
