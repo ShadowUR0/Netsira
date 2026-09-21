@@ -39,7 +39,7 @@ public sealed partial class MainWindow : Window
                 $"Jitter: {(r.JitterMs is null ? "unavailable" : $"{r.JitterMs:0.0} ms")}",
                 $"Probe loss: {r.LossPercent:0}%"
             };
-            lines.AddRange(r.Findings.Select(x => "• " + x));
+            lines.AddRange(r.Findings.Select(x => "• " + x.Title));
             QuickTestStatus.Text = string.Join(Environment.NewLine, lines);
         }
         catch (Exception ex) { QuickTestStatus.Text = "Quick test failed: " + ex.Message; }
@@ -104,6 +104,7 @@ public sealed partial class MainWindow : Window
                     (r.EthernetFullDuplex is null ? "" : r.EthernetFullDuplex == true ? "full duplex" : "half duplex"),
                 $"CPU: {(r.CpuLoadPercent is null ? "unavailable" : $"{r.CpuLoadPercent:0.#}%")}"
             };
+            lines.AddRange(FindingEngine.ForAirOs(r).Select(x => "• " + x.Title));
             AirOsStatus.Text = string.Join(Environment.NewLine, lines);
         }
         catch (Exception ex) { AirOsStatus.Text = "airOS read failed: " + ex.Message; }
