@@ -1,5 +1,7 @@
 # Netsira
 
+**Web:** https://shadowur0.github.io/Netsira/
+
 Netsira is an open-source network and wireless diagnostics suite.
 
 It is not a speed-test clone. The project is designed to diagnose a connection layer by layer:
