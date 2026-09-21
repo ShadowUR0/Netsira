@@ -408,11 +408,15 @@ private fun DiagnosticsPage(
             }
         }
         item {
+            ConnectionPath(lastQuick)
+        }
+        item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 MetricTile(
                     Modifier.weight(1f), "Internet",
                     when { lastQuick == null -> "—"; lastQuick.dnsOk -> "Reachable"; else -> "Problem" },
-                    lastQuick?.averageLatencyMs?.let { String.format(Locale.US, "%.0f ms", it) } ?: "Latency"
+                    lastQuick?.averageLatencyMs?.let { String.format(Locale.US, "%.0f ms", it) } ?: "Latency",
+                    progress = lastQuick?.let { if (it.dnsOk) 1f else 0f }
                 )
                 MetricTile(
                     Modifier.weight(1f), "Download",
@@ -424,12 +428,14 @@ private fun DiagnosticsPage(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 MetricTile(
                     Modifier.weight(1f), "Loss",
-                    lastQuick?.let { String.format(Locale.US, "%.0f%%", it.lossPercent) } ?: "—", "Quick probes"
+                    lastQuick?.let { String.format(Locale.US, "%.0f%%", it.lossPercent) } ?: "—", "Quick probes",
+                    progress = lastQuick?.let { (1f - (it.lossPercent / 100.0).toFloat()).coerceIn(0f, 1f) }
                 )
                 MetricTile(
                     Modifier.weight(1f), "Stability",
                     lastStability?.let { String.format(Locale.US, "%.0f%%", 100 - it.probeLossPercent) } ?: "—",
-                    "Successful probes"
+                    "Successful probes",
+                    progress = lastStability?.let { ((100.0 - it.probeLossPercent) / 100.0).toFloat().coerceIn(0f, 1f) }
                 )
             }
         }
@@ -529,14 +535,32 @@ private fun DevicesPage(
         if (lastAirOs != null) {
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    MetricTile(Modifier.weight(1f), "Signal", lastAirOs.signalDbm?.let { it.toInt().toString() + " dBm" } ?: "—", "Received power")
-                    MetricTile(Modifier.weight(1f), "SNR", lastAirOs.snrDb?.let { it.toInt().toString() + " dB" } ?: "—", "Signal quality")
+                    MetricTile(
+                        Modifier.weight(1f),
+                        "Signal",
+                        lastAirOs.signalDbm?.let { it.toInt().toString() + " dBm" } ?: "—",
+                        "Received power",
+                        progress = lastAirOs.signalDbm?.let { ((it + 90.0) / 40.0).toFloat().coerceIn(0f, 1f) }
+                    )
+                    MetricTile(
+                        Modifier.weight(1f),
+                        "SNR",
+                        lastAirOs.snrDb?.let { it.toInt().toString() + " dB" } ?: "—",
+                        "Signal quality",
+                        progress = lastAirOs.snrDb?.let { (it / 30.0).toFloat().coerceIn(0f, 1f) }
+                    )
                 }
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     MetricTile(Modifier.weight(1f), "Ethernet", lastAirOs.ethernetSpeedMbps?.let { it.toInt().toString() + " Mb/s" } ?: "—", if (lastAirOs.ethernetFullDuplex == true) "Full duplex" else "Link")
-                    MetricTile(Modifier.weight(1f), "CPU", lastAirOs.cpuLoadPercent?.let { it.toInt().toString() + "%" } ?: "—", lastAirOs.model)
+                    MetricTile(
+                        Modifier.weight(1f),
+                        "CPU",
+                        lastAirOs.cpuLoadPercent?.let { it.toInt().toString() + "%" } ?: "—",
+                        lastAirOs.model,
+                        progress = lastAirOs.cpuLoadPercent?.let { (it / 100.0).toFloat().coerceIn(0f, 1f) }
+                    )
                 }
             }
             item {
@@ -643,12 +667,80 @@ private fun SectionCard(title: String, subtitle: String? = null, content: @Compo
 }
 
 @Composable
-private fun MetricTile(modifier: Modifier, label: String, value: String, supporting: String) {
+private fun MetricTile(
+    modifier: Modifier,
+    label: String,
+    value: String,
+    supporting: String,
+    progress: Float? = null
+) {
     ElevatedCard(modifier) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            if (progress != null) {
+                LinearProgressIndicator(
+                    progress = { progress.coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth().padding(top = 3.dp)
+                )
+            }
             Text(supporting, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun ConnectionPath(result: QuickDiagnosticResult?) {
+    ElevatedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Connection path", fontWeight = FontWeight.SemiBold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                PathNode(Modifier.weight(1f), "Device", "Ready", true)
+                Text("→", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                PathNode(
+                    Modifier.weight(1f),
+                    "Network",
+                    when {
+                        result == null -> "Not tested"
+                        result.hasNetwork -> "Connected"
+                        else -> "Problem"
+                    },
+                    result?.hasNetwork == true
+                )
+                Text("→", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                PathNode(
+                    Modifier.weight(1f),
+                    "Internet",
+                    when {
+                        result == null -> "Not tested"
+                        result.dnsOk -> "Reachable"
+                        else -> "Problem"
+                    },
+                    result?.dnsOk == true
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PathNode(modifier: Modifier, title: String, state: String, positive: Boolean) {
+    val container = when {
+        state == "Not tested" -> MaterialTheme.colorScheme.surfaceVariant
+        positive -> MaterialTheme.colorScheme.secondaryContainer
+        else -> MaterialTheme.colorScheme.errorContainer
+    }
+    Surface(modifier = modifier, color = container, shape = MaterialTheme.shapes.medium) {
+        Column(
+            Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(title, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            Text(state, style = MaterialTheme.typography.bodySmall)
         }
     }
 }
