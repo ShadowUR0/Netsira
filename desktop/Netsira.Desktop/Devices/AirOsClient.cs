@@ -30,6 +30,8 @@ public sealed class AirOsClient : IDisposable
 {
     private readonly HttpClient _http;
     private string? _csrf;
+    private Uri? _baseUri;
+    private int? _apiVersion;
 
     public AirOsClient(bool allowInvalidCertificate = false)
     {
@@ -43,7 +45,41 @@ public sealed class AirOsClient : IDisposable
             handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
 
         _http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(10) };
-        _http.DefaultRequestHeaders.UserAgent.ParseAdd("Netsira/0.2");
+        _http.DefaultRequestHeaders.UserAgent.ParseAdd("Netsira/0.3");
+    }
+
+    public bool IsAuthenticated => _baseUri is not null && _apiVersion is not null;
+
+    public async Task LoginAsync(
+        string baseUrl,
+        string username,
+        string password,
+        CancellationToken cancellationToken = default)
+    {
+        _baseUri = NormalizeBaseUri(baseUrl);
+        _csrf = null;
+        _apiVersion = await TryLoginV8Async(_baseUri, username, password, cancellationToken)
+            ? 8
+            : await LoginV6Async(_baseUri, username, password, cancellationToken);
+    }
+
+    public async Task<AirOsSnapshot> ReadStatusAsync(CancellationToken cancellationToken = default)
+    {
+        if (_baseUri is null || _apiVersion is null)
+            throw new InvalidOperationException("airOS client is not authenticated.");
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(_baseUri, "status.cgi"));
+        if (!string.IsNullOrWhiteSpace(_csrf))
+            request.Headers.TryAddWithoutValidation("X-CSRF-ID", _csrf);
+
+        using var response = await _http.SendAsync(request, cancellationToken);
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            throw new UnauthorizedAccessException("airOS session expired or status access was rejected.");
+        response.EnsureSuccessStatusCode();
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        return ParseSnapshot(_apiVersion.Value, doc.RootElement);
     }
 
     public async Task<AirOsSnapshot> ConnectAndReadAsync(
@@ -52,23 +88,8 @@ public sealed class AirOsClient : IDisposable
         string password,
         CancellationToken cancellationToken = default)
     {
-        var baseUri = NormalizeBaseUri(baseUrl);
-        var apiVersion = await TryLoginV8Async(baseUri, username, password, cancellationToken)
-            ? 8
-            : await LoginV6Async(baseUri, username, password, cancellationToken);
-
-        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, "status.cgi"));
-        if (!string.IsNullOrWhiteSpace(_csrf))
-            request.Headers.TryAddWithoutValidation("X-CSRF-ID", _csrf);
-
-        using var response = await _http.SendAsync(request, cancellationToken);
-        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-            throw new UnauthorizedAccessException("airOS rejected the authenticated status request.");
-        response.EnsureSuccessStatusCode();
-
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
-        return ParseSnapshot(apiVersion, doc.RootElement);
+        await LoginAsync(baseUrl, username, password, cancellationToken);
+        return await ReadStatusAsync(cancellationToken);
     }
 
     private async Task<bool> TryLoginV8Async(Uri baseUri, string username, string password, CancellationToken ct)
@@ -202,7 +223,7 @@ public sealed class AirOsClient : IDisposable
     {
         if (!parent.HasValue || !TryGet(parent.Value, out var value, name)) return null;
         if (value.ValueKind == JsonValueKind.Number && value.TryGetDouble(out var number)) return number;
-        if (value.ValueKind == JsonValueKind.String && double.TryParse(value.GetString(), out number)) return number;
+        if (value.ValueKind == JsonValueKind.String && double.TryParse(value.GetString()?.Split(' ')[0], out number)) return number;
         return null;
     }
 
@@ -210,7 +231,7 @@ public sealed class AirOsClient : IDisposable
     {
         if (!parent.HasValue || !TryGet(parent.Value, out var value, name)) return null;
         if (value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var number)) return number;
-        if (value.ValueKind == JsonValueKind.String && long.TryParse(value.GetString(), out number)) return number;
+        if (value.ValueKind == JsonValueKind.String && long.TryParse(value.GetString()?.Split(' ')[0], out number)) return number;
         return null;
     }
 

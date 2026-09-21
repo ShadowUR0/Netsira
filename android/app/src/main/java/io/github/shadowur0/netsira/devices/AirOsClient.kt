@@ -7,7 +7,6 @@ import okhttp3.FormBody
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.Response
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
@@ -53,29 +52,42 @@ class AirOsClient {
         .build()
 
     private var csrf: String? = null
+    private var base: String? = null
+    private var apiVersion: Int? = null
 
-    fun connectAndRead(baseValue: String, username: String, password: String): AirOsSnapshot {
-        val base = normalize(baseValue)
-        val api = if (tryLoginV8(base, username, password)) 8 else loginV6(base, username, password)
+    fun login(baseValue: String, username: String, password: String) {
+        base = normalize(baseValue)
+        csrf = null
+        apiVersion = if (tryLoginV8(base!!, username, password)) 8 else loginV6(base!!, username, password)
+    }
+
+    fun readStatus(): AirOsSnapshot {
+        val currentBase = base ?: error("airOS client is not authenticated.")
+        val currentApi = apiVersion ?: error("airOS client is not authenticated.")
 
         val request = Request.Builder()
-            .url(resolve(base, "status.cgi"))
-            .header("User-Agent", "Netsira/0.2")
+            .url(resolve(currentBase, "status.cgi"))
+            .header("User-Agent", "Netsira/0.3")
             .apply { csrf?.let { header("X-CSRF-ID", it) } }
             .build()
 
         client.newCall(request).execute().use { response ->
-            if (response.code == 401 || response.code == 403) error("airOS rejected the authenticated status request.")
+            if (response.code == 401 || response.code == 403) error("airOS session expired or status access was rejected.")
             if (!response.isSuccessful) error("airOS status failed: HTTP " + response.code)
-            return parseSnapshot(api, JSONObject(response.body.string()))
+            return parseSnapshot(currentApi, JSONObject(response.body.string()))
         }
+    }
+
+    fun connectAndRead(baseValue: String, username: String, password: String): AirOsSnapshot {
+        login(baseValue, username, password)
+        return readStatus()
     }
 
     private fun tryLoginV8(base: String, username: String, password: String): Boolean {
         val json = JSONObject().put("username", username).put("password", password).toString()
         val request = Request.Builder()
             .url(resolve(base, "api/auth"))
-            .header("User-Agent", "Netsira/0.2")
+            .header("User-Agent", "Netsira/0.3")
             .post(json.toRequestBody("application/json".toMediaType()))
             .build()
 
