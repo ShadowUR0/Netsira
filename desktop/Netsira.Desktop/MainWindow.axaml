@@ -71,6 +71,32 @@
 
                 <Border Padding="20" CornerRadius="10" BorderThickness="1" BorderBrush="#CBD5E1">
                     <StackPanel Spacing="12">
+                        <TextBlock FontSize="18" FontWeight="SemiBold" Text="Antenna alignment" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.75"
+                                   Text="Uses one authenticated airOS session and refreshes signal, SNR and chain values once per second." />
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button Name="AlignmentStartButton" Click="StartAlignment" Content="Start alignment" />
+                            <Button Name="AlignmentStopButton" Click="StopAlignment" IsEnabled="False" Content="Stop" />
+                        </StackPanel>
+                        <TextBlock Name="AlignmentStatus" TextWrapping="Wrap" Text="Not running." />
+                    </StackPanel>
+                </Border>
+
+                <Border Padding="20" CornerRadius="10" BorderThickness="1" BorderBrush="#CBD5E1">
+                    <StackPanel Spacing="12">
+                        <TextBlock FontSize="18" FontWeight="SemiBold" Text="Stability monitor" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.75"
+                                   Text="Runs repeated TCP reachability for 30 seconds and also samples airOS signal/SNR when device credentials are available." />
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button Name="StabilityStartButton" Click="StartStability" Content="Run 30-second stability test" />
+                            <Button Name="StabilityStopButton" Click="StopStability" IsEnabled="False" Content="Cancel" />
+                        </StackPanel>
+                        <TextBlock Name="StabilityStatus" TextWrapping="Wrap" Text="Not run yet." />
+                    </StackPanel>
+                </Border>
+
+                <Border Padding="20" CornerRadius="10" BorderThickness="1" BorderBrush="#CBD5E1">
+                    <StackPanel Spacing="12">
                         <TextBlock FontSize="18" FontWeight="SemiBold" Text="Internet throughput (M-Lab NDT7)" />
                         <TextBlock TextWrapping="Wrap" Opacity="0.75" Text="Optional. Measurement Lab records measurement metadata including your public IP address." />
                         <Button Name="SpeedTestButton" HorizontalAlignment="Left" Click="RunSpeedTest" Content="Run download + upload test" />

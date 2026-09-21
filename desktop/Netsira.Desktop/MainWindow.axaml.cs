@@ -2,6 +2,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using Netsira.Desktop.Core;
 using Netsira.Desktop.Devices;
 using Netsira.Desktop.Diagnostics;
@@ -20,6 +21,9 @@ public sealed partial class MainWindow : Window
     private Ndt7Result? _lastSpeed;
     private AirOsSnapshot? _lastAirOs;
     private string _lastMode = "quick";
+    private CancellationTokenSource? _alignmentCts;
+    private CancellationTokenSource? _stabilityCts;
+    private StabilitySummary? _lastStability;
 
     public MainWindow() => InitializeComponent();
 
@@ -187,6 +191,148 @@ public sealed partial class MainWindow : Window
         catch (Exception ex) { AirOsStatus.Text = "airOS read failed: " + ex.Message; }
         finally { AirOsButton.IsEnabled = true; }
     }
+
+    private async void StartAlignment(object? sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(AirOsHost.Text) ||
+            string.IsNullOrWhiteSpace(AirOsUser.Text) ||
+            string.IsNullOrEmpty(AirOsPassword.Text))
+        {
+            AlignmentStatus.Text = "Enter the airOS device address, username and password first.";
+            return;
+        }
+
+        _alignmentCts?.Cancel();
+        _alignmentCts = new CancellationTokenSource();
+        AlignmentStartButton.IsEnabled = false;
+        AlignmentStopButton.IsEnabled = true;
+        AlignmentStatus.Text = "Connecting…";
+
+        try
+        {
+            using var client = new AirOsClient(AllowInvalidCertificate.IsChecked == true);
+            await client.LoginAsync(AirOsHost.Text ?? "", AirOsUser.Text ?? "", AirOsPassword.Text ?? "", _alignmentCts.Token);
+            var monitor = new AirOsLiveMonitorService();
+
+            var summary = await monitor.RunAsync(
+                client,
+                TimeSpan.FromSeconds(1),
+                async sample =>
+                {
+                    var chains = sample.Chains.Count == 0
+                        ? "unavailable"
+                        : string.Join(", ", sample.Chains.Select(x => x.ToString("0")));
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        AlignmentStatus.Text =
+                            $"Signal: {(sample.SignalDbm?.ToString("0") ?? "?")} dBm   " +
+                            $"SNR: {(sample.SnrDb?.ToString("0") ?? "?")} dB   " +
+                            $"Chains: {chains}";
+                    });
+                },
+                _alignmentCts.Token);
+
+            AlignmentStatus.Text =
+                $"Stopped after {summary.SampleCount} samples.{Environment.NewLine}" +
+                $"Best/worst signal: {summary.BestSignalDbm?.ToString("0") ?? "?"} / {summary.WorstSignalDbm?.ToString("0") ?? "?"} dBm{Environment.NewLine}" +
+                $"Average SNR: {summary.AverageSnrDb?.ToString("0.0") ?? "?"} dB   " +
+                $"Max chain delta: {summary.MaxChainDeltaDb?.ToString("0.0") ?? "?"} dB";
+        }
+        catch (OperationCanceledException)
+        {
+            // Normal stop path.
+        }
+        catch (Exception ex)
+        {
+            AlignmentStatus.Text = "Alignment failed: " + ex.Message;
+        }
+        finally
+        {
+            AlignmentStartButton.IsEnabled = true;
+            AlignmentStopButton.IsEnabled = false;
+            _alignmentCts?.Dispose();
+            _alignmentCts = null;
+        }
+    }
+
+    private void StopAlignment(object? sender, RoutedEventArgs e) => _alignmentCts?.Cancel();
+
+    private async void StartStability(object? sender, RoutedEventArgs e)
+    {
+        _stabilityCts?.Cancel();
+        _stabilityCts = new CancellationTokenSource();
+        StabilityStartButton.IsEnabled = false;
+        StabilityStopButton.IsEnabled = true;
+        StabilityStatus.Text = "Starting 30-second stability test…";
+
+        AirOsClient? airOs = null;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(AirOsHost.Text) &&
+                !string.IsNullOrWhiteSpace(AirOsUser.Text) &&
+                !string.IsNullOrEmpty(AirOsPassword.Text))
+            {
+                try
+                {
+                    airOs = new AirOsClient(AllowInvalidCertificate.IsChecked == true);
+                    await airOs.LoginAsync(AirOsHost.Text ?? "", AirOsUser.Text ?? "", AirOsPassword.Text ?? "", _stabilityCts.Token);
+                }
+                catch (Exception ex)
+                {
+                    airOs?.Dispose();
+                    airOs = null;
+                    StabilityStatus.Text = "CPE monitoring unavailable (" + ex.Message + "). Continuing internet stability only…";
+                }
+            }
+
+            var samples = 0;
+            var monitor = new StabilityMonitorService();
+            var summary = await monitor.RunAsync(
+                TimeSpan.FromSeconds(30),
+                TimeSpan.FromSeconds(1),
+                airOs,
+                async sample =>
+                {
+                    samples++;
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        StabilityStatus.Text =
+                            $"Sample {samples} — TCP: {(sample.TcpLatencyMs?.ToString("0.0") ?? "failed")} ms" +
+                            (sample.SignalDbm is null ? "" : $" — Signal: {sample.SignalDbm:0} dBm — SNR: {sample.SnrDb?.ToString("0") ?? "?"} dB");
+                    });
+                },
+                _stabilityCts.Token);
+
+            _lastStability = summary;
+            _lastMode = "stability";
+            ExportReportButton.IsEnabled = true;
+            StabilityStatus.Text =
+                $"Samples: {summary.SampleCount}{Environment.NewLine}" +
+                $"Probe loss: {summary.ProbeLossPercent:0.0}%{Environment.NewLine}" +
+                $"Average latency: {summary.AverageLatencyMs?.ToString("0.0") ?? "?"} ms{Environment.NewLine}" +
+                $"Jitter: {summary.JitterMs?.ToString("0.0") ?? "?"} ms{Environment.NewLine}" +
+                $"Signal best/worst/spread: {summary.BestSignalDbm?.ToString("0") ?? "?"} / {summary.WorstSignalDbm?.ToString("0") ?? "?"} / {summary.SignalSpreadDb?.ToString("0.0") ?? "?"} dB{Environment.NewLine}" +
+                $"Average SNR: {summary.AverageSnrDb?.ToString("0.0") ?? "?"} dB";
+        }
+        catch (OperationCanceledException)
+        {
+            StabilityStatus.Text = "Stability test cancelled.";
+        }
+        catch (Exception ex)
+        {
+            StabilityStatus.Text = "Stability test failed: " + ex.Message;
+        }
+        finally
+        {
+            airOs?.Dispose();
+            StabilityStartButton.IsEnabled = true;
+            StabilityStopButton.IsEnabled = false;
+            _stabilityCts?.Dispose();
+            _stabilityCts = null;
+        }
+    }
+
+    private void StopStability(object? sender, RoutedEventArgs e) => _stabilityCts?.Cancel();
 
     private async void RunSpeedTest(object? sender, RoutedEventArgs e)
     {
