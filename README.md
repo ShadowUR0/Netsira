@@ -1,6 +1,7 @@
 # Netsira
 
-**Web:** https://shadowur0.github.io/Netsira/
+**Web:** https://shadowur0.github.io/Netsira/  
+**Downloads:** https://github.com/ShadowUR0/Netsira/releases
 
 Netsira is an open-source network and wireless diagnostics suite.
 
