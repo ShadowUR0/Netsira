@@ -58,3 +58,15 @@ Completed on `develop`.
 - Final Android, Desktop, Web, and Specs builds verified green.
 
 Network-device integration remains read-only.
+
+
+## UX repair pass after Phase 3 ✅
+
+- Reworked top-level navigation on Web, Android, and Desktop.
+- Replaced the one-long-screen layout with real Diagnostics, Devices, Calculators, History, and Settings views.
+- Added at-a-glance health/metric cards and interpreted findings before raw technical details.
+- Moved device connection fields into a dedicated Devices view.
+- Applied single-column labeled forms on Android.
+- Added responsive navigation and larger/focus-visible controls on Web.
+- Added shared UX/UI guidance based on usability/accessibility research in `docs/UX_UI.md`.
+- Web, Android, and Desktop builds verified green.
