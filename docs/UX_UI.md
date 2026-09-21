@@ -55,3 +55,21 @@ Defer or explain:
 - SNR
 - chain imbalance
 - CSRF/session details
+
+
+## Research references
+
+- Nielsen Norman Group — Progressive Disclosure:
+  https://www.nngroup.com/articles/progressive-disclosure/
+- W3C — WCAG 2.2, including focus visibility and target-size guidance:
+  https://www.w3.org/TR/WCAG22/
+- Baymard Institute — Mobile form labels above fields:
+  https://baymard.com/research-articles/mobile-form-usability-label-position
+- Baymard Institute — Avoid extensive multi-column forms:
+  https://baymard.com/research-articles/avoid-multi-column-forms
+- Fluent 2 — Navigation:
+  https://fluent2.microsoft.design/components/web/react/core/nav/usage
+- Fluent 2 — Iconography:
+  https://fluent2.microsoft.design/iconography
+
+These sources inform the interaction principles; Netsira does not copy any source UI verbatim.
