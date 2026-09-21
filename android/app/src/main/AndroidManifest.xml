@@ -6,6 +6,7 @@
         android:allowBackup="false"
         android:label="Netsira"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/Theme.Netsira">
         <activity
             android:name=".MainActivity"

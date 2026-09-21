@@ -12,11 +12,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import io.github.shadowur0.netsira.core.RfCalculators
+import io.github.shadowur0.netsira.devices.AirOsClient
+import io.github.shadowur0.netsira.diagnostics.MlabNdt7Client
 import io.github.shadowur0.netsira.diagnostics.QuickDiagnostic
 import io.github.shadowur0.netsira.ui.NetsiraTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
@@ -31,58 +36,143 @@ class MainActivity : ComponentActivity() {
 private fun NetsiraApp() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var running by remember { mutableStateOf(false) }
-    var resultText by remember { mutableStateOf("Not run yet.") }
+
+    var quickRunning by remember { mutableStateOf(false) }
+    var quickText by remember { mutableStateOf("Not run yet.") }
+
+    var speedRunning by remember { mutableStateOf(false) }
+    var speedText by remember { mutableStateOf("Not run yet.") }
+
+    var airOsRunning by remember { mutableStateOf(false) }
+    var airOsText by remember { mutableStateOf("Not connected.") }
+    var airOsHost by remember { mutableStateOf("http://192.168.1.20") }
+    var airOsUser by remember { mutableStateOf("ubnt") }
+    var airOsPassword by remember { mutableStateOf("") }
+
     var distance by remember { mutableStateOf("1") }
     var frequency by remember { mutableStateOf("5800") }
     var fspl by remember { mutableStateOf("—") }
 
-    Scaffold(topBar = { TopAppBar(title = { Column { Text("Netsira"); Text("Network diagnostics", style = MaterialTheme.typography.labelMedium) } }) }) { padding ->
+    Scaffold(topBar = {
+        TopAppBar(title = { Column { Text("Netsira"); Text("Network diagnostics", style = MaterialTheme.typography.labelMedium) } })
+    }) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item { Text("Diagnostics", style = MaterialTheme.typography.headlineMedium) }
+
             item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Quick test", style = MaterialTheme.typography.titleMedium)
-                        Button(enabled = !running, onClick = {
-                            running = true
-                            resultText = "Running…"
-                            scope.launch {
-                                val r = QuickDiagnostic(context).run()
-                                resultText = buildString {
-                                    appendLine("Network: " + if (r.hasNetwork) r.transport else "unavailable")
-                                    appendLine("DNS: " + if (r.dnsOk) "ok" else "failed")
-                                    appendLine("Latency: " + (r.averageLatencyMs?.let { String.format(Locale.US, "%.1f ms", it) } ?: "unavailable"))
-                                    appendLine("Jitter: " + (r.jitterMs?.let { String.format(Locale.US, "%.1f ms", it) } ?: "unavailable"))
-                                    appendLine("Probe loss: " + r.lossPercent.toInt() + "%")
-                                    r.findings.forEach { appendLine("• " + it) }
+                SectionCard("Quick test") {
+                    Button(enabled = !quickRunning, onClick = {
+                        quickRunning = true
+                        quickText = "Running…"
+                        scope.launch {
+                            val r = QuickDiagnostic(context).run()
+                            quickText = buildString {
+                                appendLine("Network: " + if (r.hasNetwork) r.transport else "unavailable")
+                                appendLine("DNS: " + if (r.dnsOk) "ok" else "failed")
+                                appendLine("Latency: " + (r.averageLatencyMs?.let { String.format(Locale.US, "%.1f ms", it) } ?: "unavailable"))
+                                appendLine("Jitter: " + (r.jitterMs?.let { String.format(Locale.US, "%.1f ms", it) } ?: "unavailable"))
+                                appendLine("Probe loss: " + r.lossPercent.toInt() + "%")
+                                r.findings.forEach { appendLine("• " + it) }
+                            }.trim()
+                            quickRunning = false
+                        }
+                    }) { Text(if (quickRunning) "Running…" else "Run quick test") }
+                    Text(quickText)
+                }
+            }
+
+            item {
+                SectionCard("airOS device status") {
+                    Text("Read-only. Credentials stay in memory and are not saved.", style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(value = airOsHost, onValueChange = { airOsHost = it }, label = { Text("Device URL or IP") }, singleLine = true)
+                    OutlinedTextField(value = airOsUser, onValueChange = { airOsUser = it }, label = { Text("Username") }, singleLine = true)
+                    OutlinedTextField(
+                        value = airOsPassword,
+                        onValueChange = { airOsPassword = it },
+                        label = { Text("Password") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation()
+                    )
+                    Button(enabled = !airOsRunning, onClick = {
+                        airOsRunning = true
+                        airOsText = "Connecting…"
+                        scope.launch {
+                            airOsText = try {
+                                val r = withContext(Dispatchers.IO) { AirOsClient().connectAndRead(airOsHost, airOsUser, airOsPassword) }
+                                buildString {
+                                    appendLine("airOS API: " + r.apiVersion)
+                                    appendLine("Model: " + r.model)
+                                    appendLine("Hostname: " + (r.hostname ?: "unknown"))
+                                    appendLine("Firmware: " + (r.firmware ?: "unknown"))
+                                    appendLine("Signal: " + (r.signalDbm?.let { it.toInt().toString() + " dBm" } ?: "unavailable"))
+                                    appendLine("Noise: " + (r.noiseDbm?.let { it.toInt().toString() + " dBm" } ?: "unavailable"))
+                                    appendLine("SNR: " + (r.snrDb?.let { it.toInt().toString() + " dB" } ?: "unavailable"))
+                                    appendLine("Chains: " + (r.chainRssi ?: "unavailable"))
+                                    appendLine("Frequency: " + (r.frequencyMHz?.let { it.toInt().toString() + " MHz" } ?: "unavailable"))
+                                    appendLine("Channel width: " + (r.channelWidthMHz?.let { it.toInt().toString() + " MHz" } ?: "unavailable"))
+                                    appendLine("TX power: " + (r.txPowerDbm?.let { it.toInt().toString() + " dBm" } ?: "unavailable"))
+                                    appendLine("Distance: " + (r.distanceMeters?.let { it.toInt().toString() + " m" } ?: "unavailable"))
+                                    appendLine("Ethernet: " + (r.ethernetSpeedMbps?.let { it.toInt().toString() + " Mb/s" } ?: "unavailable"))
                                 }.trim()
-                                running = false
+                            } catch (e: Exception) {
+                                "airOS read failed: " + (e.message ?: e.javaClass.simpleName)
                             }
-                        }) { Text(if (running) "Running…" else "Run quick test") }
-                        Text(resultText)
-                    }
+                            airOsRunning = false
+                        }
+                    }) { Text(if (airOsRunning) "Connecting…" else "Read device status") }
+                    Text(airOsText)
                 }
             }
+
             item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("FSPL calculator", style = MaterialTheme.typography.titleMedium)
-                        OutlinedTextField(value = distance, onValueChange = { distance = it }, label = { Text("Distance (km)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-                        OutlinedTextField(value = frequency, onValueChange = { frequency = it }, label = { Text("Frequency (MHz)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-                        Button(onClick = {
-                            val dv = distance.toDoubleOrNull()
-                            val fv = frequency.toDoubleOrNull()
-                            fspl = if (dv != null && fv != null && dv > 0 && fv > 0) String.format(Locale.US, "%.2f dB", RfCalculators.fsplDb(dv, fv)) else "Invalid values"
-                        }) { Text("Calculate") }
-                        Text("Result: " + fspl)
-                    }
+                SectionCard("Internet throughput (M-Lab NDT7)") {
+                    Text("Optional. Measurement Lab records measurement metadata including your public IP address.", style = MaterialTheme.typography.bodySmall)
+                    Button(enabled = !speedRunning, onClick = {
+                        speedRunning = true
+                        speedText = "Locating M-Lab server and running download/upload…"
+                        scope.launch {
+                            speedText = try {
+                                val r = MlabNdt7Client().run()
+                                val location = listOfNotNull(r.city, r.country).joinToString(", ")
+                                "Download: " + String.format(Locale.US, "%.2f Mb/s", r.downloadMbps) + "\n" +
+                                    "Upload: " + String.format(Locale.US, "%.2f Mb/s", r.uploadMbps) + "\n" +
+                                    "Server: " + r.machine + if (location.isNotEmpty()) " (" + location + ")" else ""
+                            } catch (e: Exception) {
+                                "NDT7 test failed: " + (e.message ?: e.javaClass.simpleName)
+                            }
+                            speedRunning = false
+                        }
+                    }) { Text(if (speedRunning) "Running…" else "Run download + upload test") }
+                    Text(speedText)
                 }
             }
+
+            item {
+                SectionCard("FSPL calculator") {
+                    OutlinedTextField(value = distance, onValueChange = { distance = it }, label = { Text("Distance (km)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                    OutlinedTextField(value = frequency, onValueChange = { frequency = it }, label = { Text("Frequency (MHz)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                    Button(onClick = {
+                        val dv = distance.toDoubleOrNull()
+                        val fv = frequency.toDoubleOrNull()
+                        fspl = if (dv != null && fv != null && dv > 0 && fv > 0) String.format(Locale.US, "%.2f dB", RfCalculators.fsplDb(dv, fv)) else "Invalid values"
+                    }) { Text("Calculate") }
+                    Text("Result: " + fspl)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionCard(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            content()
         }
     }
 }
