@@ -35,12 +35,14 @@ function MetricCard({
   hint,
   icon,
   state = 'neutral',
+  progress,
 }: {
   label: string
   value: string
   hint?: string
   icon: ReactNode
   state?: 'good' | 'warning' | 'problem' | 'neutral'
+  progress?: number
 }) {
   return (
     <div className={'metric-card metric-' + state}>
@@ -48,6 +50,11 @@ function MetricCard({
       <div>
         <div className="metric-label">{label}</div>
         <div className="metric-value">{value}</div>
+        {typeof progress === 'number' && (
+          <div className="metric-progress" aria-hidden="true">
+            <span style={{ width: Math.max(0, Math.min(100, progress * 100)) + '%' }} />
+          </div>
+        )}
         {hint && <div className="metric-hint">{hint}</div>}
       </div>
     </div>
@@ -227,6 +234,20 @@ export function App() {
               </button>
             </section>
 
+            <section className="connection-path" aria-label="Connection path">
+              <div className="path-node path-good">
+                <span>1</span><div><b>Browser</b><small>Ready</small></div>
+              </div>
+              <div className="path-line" />
+              <div className={'path-node ' + (!lastQuick ? 'path-neutral' : lastQuick.online ? 'path-good' : 'path-problem')}>
+                <span>2</span><div><b>Network</b><small>{!lastQuick ? 'Not tested' : lastQuick.online ? 'Connected' : 'Problem'}</small></div>
+              </div>
+              <div className="path-line" />
+              <div className={'path-node ' + (!lastQuick ? 'path-neutral' : lastQuick.httpsReachable ? 'path-good' : 'path-problem')}>
+                <span>3</span><div><b>Internet</b><small>{!lastQuick ? 'Not tested' : lastQuick.httpsReachable ? 'Reachable' : 'Problem'}</small></div>
+              </div>
+            </section>
+
             <section className="metric-grid" aria-label="Latest results">
               <MetricCard
                 label="Internet"
@@ -234,6 +255,7 @@ export function App() {
                 hint={lastQuick?.latencyMs == null ? 'HTTPS reachability' : lastQuick.latencyMs.toFixed(0) + ' ms request'}
                 icon={<IconWorld size={22} />}
                 state={!lastQuick ? 'neutral' : lastQuick.httpsReachable ? 'good' : 'problem'}
+                progress={lastQuick ? (lastQuick.httpsReachable ? 1 : 0) : undefined}
               />
               <MetricCard
                 label="Download"
@@ -248,6 +270,7 @@ export function App() {
                 hint={lastStability ? 'Successful checks' : '30-second test'}
                 icon={<IconActivityHeartbeat size={22} />}
                 state={!lastStability ? 'neutral' : lastStability.failurePercent > 0 ? 'warning' : 'good'}
+                progress={lastStability ? Math.max(0, Math.min(1, (100 - lastStability.failurePercent) / 100)) : undefined}
               />
               <MetricCard
                 label="Device / CPE"
@@ -300,11 +323,16 @@ export function App() {
                     </button>
                   </div>
                   {lastStability && (
+                    <>
+                    <div className="quality-bar" aria-label="Stability success rate">
+                      <span style={{ width: Math.max(0, Math.min(100, 100 - lastStability.failurePercent)) + '%' }} />
+                    </div>
                     <div className="mini-metrics">
                       <span><b>{lastStability.failurePercent.toFixed(1)}%</b> failures</span>
                       <span><b>{lastStability.averageRequestMs?.toFixed(0) ?? '—'} ms</b> avg</span>
                       <span><b>{lastStability.jitterMs?.toFixed(0) ?? '—'} ms</b> jitter</span>
                     </div>
+                    </>
                   )}
                   {!lastStability && <small className="muted">{stabilityText}</small>}
                 </article>

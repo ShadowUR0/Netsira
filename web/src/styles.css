@@ -309,3 +309,86 @@ input:focus-visible {
   .health-hero, .panel { border-radius: 14px; padding: 18px; }
   .native-callout { display: grid; }
 }
+
+
+.metric-progress,
+.quality-bar {
+  height: 7px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.metric-progress { margin-top: 8px; }
+
+.metric-progress > span,
+.quality-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: currentColor;
+  transition: width 180ms ease;
+}
+
+.quality-bar {
+  margin-top: 14px;
+  color: var(--netsira-brand);
+}
+
+.connection-path {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 48px minmax(0, 1fr) 48px minmax(0, 1fr);
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.path-node {
+  min-height: 64px;
+  border-radius: 12px;
+  border: 1px solid var(--netsira-border);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--netsira-card);
+}
+
+.path-node > span {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.path-node b,
+.path-node small { display: block; }
+
+.path-node small {
+  margin-top: 2px;
+  color: var(--tblr-secondary-color);
+}
+
+.path-good { color: var(--netsira-good); }
+.path-problem { color: var(--netsira-problem); }
+.path-neutral { color: var(--tblr-secondary-color); }
+
+.path-line {
+  height: 2px;
+  background: var(--netsira-border);
+}
+
+@media (max-width: 620px) {
+  .connection-path {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .path-line {
+    width: 2px;
+    height: 16px;
+    margin-left: 26px;
+  }
+}
