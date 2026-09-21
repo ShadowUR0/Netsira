@@ -23,7 +23,8 @@ import io.github.shadowur0.netsira.devices.UbntDiscovery
 import io.github.shadowur0.netsira.diagnostics.AirOsConnectionSettings
 import io.github.shadowur0.netsira.diagnostics.DiagnosticMode
 import io.github.shadowur0.netsira.diagnostics.DiagnosticRunService
-import io.github.shadowur0.netsira.diagnostics.FindingEngine\nimport io.github.shadowur0.netsira.diagnostics.MlabNdt7Client
+import io.github.shadowur0.netsira.diagnostics.FindingEngine
+import io.github.shadowur0.netsira.diagnostics.MlabNdt7Client
 import io.github.shadowur0.netsira.diagnostics.Ndt7Result
 import io.github.shadowur0.netsira.diagnostics.QuickDiagnostic
 import io.github.shadowur0.netsira.diagnostics.QuickDiagnosticResult
