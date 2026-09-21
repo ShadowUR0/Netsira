@@ -35,3 +35,26 @@ Completed on `develop`.
 - CI validation for shared specs and RF vectors.
 
 Phase 2 remains read-only for network devices; no device configuration writes were added.
+
+
+## Phase 3 — Live device diagnostics ✅
+
+Completed on `develop`.
+
+- Reusable authenticated airOS sessions; status polling no longer logs in on every sample.
+- Native antenna-alignment mode on Android and Desktop with 1-second live signal/SNR/chain updates.
+- 30-second stability monitoring on Android and Desktop:
+  - repeated TCP reachability
+  - probe loss
+  - average latency
+  - jitter
+  - best/worst signal and signal spread when airOS is available
+  - average SNR when airOS is available
+- Browser-safe 30-second stability mode on Web using same-origin HTTPS timing; it is explicitly not presented as equivalent to native TCP/CPE monitoring.
+- Alignment and stability summaries are exportable in Android/Desktop diagnostic reports.
+- Web stability summaries are exportable in Web reports.
+- Web Quick/Stability no longer contact M-Lab implicitly; M-Lab remains opt-in for NDT7 throughput.
+- Shared monitoring contract plus reference vectors validated in CI.
+- Final Android, Desktop, Web, and Specs builds verified green.
+
+Network-device integration remains read-only.
