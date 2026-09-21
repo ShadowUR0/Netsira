@@ -77,7 +77,66 @@ if not required_alignment.issubset(set(alignment.get("summary", []))):
 if not required_stability.issubset(set(stability.get("summary", []))):
     raise SystemExit("Stability summary contract is incomplete")
 
+monitoring_vectors = load("spec/diagnostics/monitoring-vectors.json")
+
+alignment_samples = monitoring_vectors["alignment"]["samples"]
+alignment_expected = monitoring_vectors["alignment"]["expected"]
+alignment_signals = [x["signalDbm"] for x in alignment_samples if x["signalDbm"] is not None]
+alignment_snr = [x["snrDb"] for x in alignment_samples if x["snrDb"] is not None]
+alignment_deltas = [
+    max(x["chains"]) - min(x["chains"])
+    for x in alignment_samples
+    if len(x.get("chains", [])) >= 2
+]
+alignment_actual = {
+    "sampleCount": len(alignment_samples),
+    "bestSignalDbm": max(alignment_signals),
+    "worstSignalDbm": min(alignment_signals),
+    "averageSnrDb": sum(alignment_snr) / len(alignment_snr),
+    "maxChainDeltaDb": max(alignment_deltas),
+}
+
+stability_samples = monitoring_vectors["stability"]["samples"]
+stability_expected = monitoring_vectors["stability"]["expected"]
+stability_latency = [x["tcpLatencyMs"] for x in stability_samples if x["tcpLatencyMs"] is not None]
+stability_signal = [x["signalDbm"] for x in stability_samples if x["signalDbm"] is not None]
+stability_snr = [x["snrDb"] for x in stability_samples if x["snrDb"] is not None]
+stability_jitter_deltas = [
+    abs(stability_latency[i] - stability_latency[i - 1])
+    for i in range(1, len(stability_latency))
+]
+best_signal = max(stability_signal)
+worst_signal = min(stability_signal)
+stability_actual = {
+    "sampleCount": len(stability_samples),
+    "probeLossPercent": (len(stability_samples) - len(stability_latency)) * 100.0 / len(stability_samples),
+    "averageLatencyMs": sum(stability_latency) / len(stability_latency),
+    "jitterMs": sum(stability_jitter_deltas) / len(stability_jitter_deltas),
+    "bestSignalDbm": best_signal,
+    "worstSignalDbm": worst_signal,
+    "signalSpreadDb": best_signal - worst_signal,
+    "averageSnrDb": sum(stability_snr) / len(stability_snr),
+}
+
+for label, actual, expected in (
+    ("alignment", alignment_actual, alignment_expected),
+    ("stability", stability_actual, stability_expected),
+):
+    for key, expected_value in expected.items():
+        actual_value = actual[key]
+        if isinstance(expected_value, (int, float)):
+            if abs(actual_value - expected_value) > 1e-6:
+                raise SystemExit(
+                    f"{label} monitoring vector failed for {key}: "
+                    f"expected {expected_value}, got {actual_value}"
+                )
+        elif actual_value != expected_value:
+            raise SystemExit(
+                f"{label} monitoring vector failed for {key}: "
+                f"expected {expected_value}, got {actual_value}"
+            )
+
 print(
     f"Validated {len(vectors['cases'])} RF vectors, {len(codes)} finding codes, "
-    "monitoring contracts, and core schemas."
+    "monitoring contracts/vectors, and core schemas."
 )
