@@ -17,7 +17,7 @@ export async function runWebQuickTest(): Promise<WebQuickResult> {
   const online = navigator.onLine
   const started = performance.now()
   try {
-    const response = await fetch('https://locate.measurementlab.net/v2/nearest/ndt/ndt7', { cache: 'no-store' })
+    const response = await fetch(window.location.href, { cache: 'no-store', credentials: 'omit' })
     const latencyMs = performance.now() - started
     if (!response.ok) throw new Error('HTTP ' + response.status)
 

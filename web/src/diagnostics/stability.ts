@@ -26,8 +26,9 @@ export async function runWebStability(
     const sampleStarted = performance.now()
     let sample: WebStabilitySample
     try {
-      const response = await fetch('https://locate.measurementlab.net/v2/nearest/ndt/ndt7', {
+      const response = await fetch(window.location.href, {
         cache: 'no-store',
+        credentials: 'omit',
         signal,
       })
       sample = {

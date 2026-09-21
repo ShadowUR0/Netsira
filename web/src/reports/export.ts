@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { WebQuickResult } from '../diagnostics/quick'
 import type { Ndt7Result } from '../diagnostics/ndt7'
+import type { WebStabilityResult } from '../diagnostics/stability'
 
-export function downloadWebReport(quick: WebQuickResult | null, speed: Ndt7Result | null) {
+export function downloadWebReport(
+  quick: WebQuickResult | null,
+  speed: Ndt7Result | null,
+  stability: WebStabilityResult | null,
+) {
   const now = new Date().toISOString()
   const stages = []
 
@@ -38,10 +43,25 @@ export function downloadWebReport(quick: WebQuickResult | null, speed: Ndt7Resul
     })
   }
 
+  if (stability) {
+    stages.push({
+      id: 'internet',
+      status: stability.failurePercent >= 20
+        ? 'problem'
+        : stability.failurePercent > 0 ? 'warning' : 'info',
+      metrics: {
+        browserStabilitySampleCount: stability.sampleCount,
+        browserFailurePercent: stability.failurePercent,
+        averageBrowserRequestMs: stability.averageRequestMs,
+        browserJitterMs: stability.jitterMs,
+      },
+    })
+  }
+
   const report = {
     schemaVersion: '0.1.0',
     id: crypto.randomUUID(),
-    mode: speed ? 'standard' : 'quick',
+    mode: stability ? 'stability' : speed ? 'standard' : 'quick',
     platform: 'web',
     startedAt: now,
     endedAt: now,

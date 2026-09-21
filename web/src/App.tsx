@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { IconActivityHeartbeat, IconAntennaBars5, IconCalculator, IconDownload, IconHistory, IconSettings } from '@tabler/icons-react'
 import { runWebQuickTest, type WebQuickResult } from './diagnostics/quick'
 import { runNdt7, type Ndt7Result } from './diagnostics/ndt7'
+import { runWebStability, type WebStabilityResult } from './diagnostics/stability'
 import { downloadWebReport } from './reports/export'
 import { fsplDb } from './core/rf'
 
@@ -24,6 +25,10 @@ export function App() {
   const [speed, setSpeed] = useState('Not run yet.')
   const [speedRunning, setSpeedRunning] = useState(false)
   const [lastSpeed, setLastSpeed] = useState<Ndt7Result | null>(null)
+  const [stability, setStability] = useState('Not run yet.')
+  const [stabilityRunning, setStabilityRunning] = useState(false)
+  const [lastStability, setLastStability] = useState<WebStabilityResult | null>(null)
+  const stabilityAbort = useRef<AbortController | null>(null)
   const [distance, setDistance] = useState('1')
   const [frequency, setFrequency] = useState('5800')
   const [fspl, setFspl] = useState('—')
@@ -96,6 +101,43 @@ export function App() {
     }
   }
 
+  async function runStability() {
+    const controller = new AbortController()
+    stabilityAbort.current?.abort()
+    stabilityAbort.current = controller
+    setStabilityRunning(true)
+    setStability('Starting 30-second browser stability test…')
+
+    try {
+      const result = await runWebStability(
+        controller.signal,
+        (sample, index) => {
+          setStability(
+            'Sample ' + index +
+            ' — HTTPS: ' + (sample.ok && sample.requestMs !== null ? sample.requestMs.toFixed(1) + ' ms' : 'failed')
+          )
+        },
+      )
+      setLastStability(result)
+      setStability([
+        'Samples: ' + result.sampleCount,
+        'Request failures: ' + result.failurePercent.toFixed(1) + '%',
+        'Average request time: ' + (result.averageRequestMs === null ? 'unavailable' : result.averageRequestMs.toFixed(1) + ' ms'),
+        'Request jitter: ' + (result.jitterMs === null ? 'unavailable' : result.jitterMs.toFixed(1) + ' ms'),
+        'Browser-safe test only; native apps can also sample TCP and CPE radio metrics.',
+      ].join('\n'))
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        setStability('Stability test cancelled.')
+      } else {
+        setStability('Stability test failed: ' + (error instanceof Error ? error.message : 'unknown error'))
+      }
+    } finally {
+      setStabilityRunning(false)
+      if (stabilityAbort.current === controller) stabilityAbort.current = null
+    }
+  }
+
   function calculate() {
     try { setFspl(fsplDb(Number(distance), Number(frequency)).toFixed(2) + ' dB') }
     catch { setFspl('Invalid values') }
@@ -126,7 +168,7 @@ export function App() {
               <h2 className="page-title">Diagnostics</h2>
               <div className="text-secondary mt-1">The web edition only runs diagnostics browsers can safely expose.</div>
             </div>
-            <button className="btn btn-outline-primary" disabled={!lastQuick && !lastSpeed} onClick={() => downloadWebReport(lastQuick, lastSpeed)}>
+            <button className="btn btn-outline-primary" disabled={!lastQuick && !lastSpeed && !lastStability} onClick={() => downloadWebReport(lastQuick, lastSpeed, lastStability)}>
               <IconDownload size={18} className="me-2" />Export report
             </button>
           </div>
@@ -151,6 +193,16 @@ export function App() {
             <h3 className="card-title">Quick test</h3>
             <button className="btn btn-primary mb-3" disabled={quickRunning} onClick={runQuick}>{quickRunning ? 'Running…' : 'Run quick test'}</button>
             <pre className="diagnostic-output">{quick}</pre>
+          </div></div></div>
+
+          <div className="col-lg-6"><div className="card h-100"><div className="card-body">
+            <h3 className="card-title">Stability monitor</h3>
+            <p className="text-secondary">Browser-safe 30-second test against the Netsira site. Native apps additionally sample TCP and airOS radio metrics.</p>
+            <div className="d-flex gap-2 mb-3">
+              <button className="btn btn-primary" disabled={stabilityRunning} onClick={runStability}>{stabilityRunning ? 'Running…' : 'Run 30-second test'}</button>
+              <button className="btn btn-outline-secondary" disabled={!stabilityRunning} onClick={() => stabilityAbort.current?.abort()}>Cancel</button>
+            </div>
+            <pre className="diagnostic-output">{stability}</pre>
           </div></div></div>
 
           <div className="col-lg-6"><div className="card h-100"><div className="card-body">
