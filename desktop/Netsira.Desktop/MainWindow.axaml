@@ -1,12 +1,7 @@
-<Window
-    x:Class="Netsira.Desktop.MainWindow"
+<Window x:Class="Netsira.Desktop.MainWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="Netsira"
-    Width="1100"
-    Height="720"
-    MinWidth="820"
-    MinHeight="560">
+    Title="Netsira" Width="1100" Height="720" MinWidth="820" MinHeight="560">
     <Grid ColumnDefinitions="220,*">
         <Border Grid.Column="0" Padding="20" Background="#111827">
             <Grid RowDefinitions="Auto,24,*">
@@ -14,7 +9,6 @@
                     <TextBlock Foreground="White" FontSize="24" FontWeight="SemiBold" Text="Netsira" />
                     <TextBlock Margin="0,4,0,0" Foreground="#CBD5E1" Text="Network diagnostics" />
                 </StackPanel>
-
                 <StackPanel Grid.Row="2" Spacing="6">
                     <Button HorizontalContentAlignment="Left" Content="Diagnostics" />
                     <Button HorizontalContentAlignment="Left" Content="Devices" />
@@ -24,33 +18,31 @@
                 </StackPanel>
             </Grid>
         </Border>
-
-        <Grid Grid.Column="1" Margin="32" RowDefinitions="Auto,24,*">
-            <StackPanel>
-                <TextBlock FontSize="28" FontWeight="SemiBold" Text="Diagnostics" />
-                <TextBlock Margin="0,6,0,0" Opacity="0.65"
-                           Text="Choose a test. Netsira will use only the capabilities available on this device." />
-            </StackPanel>
-
-            <Grid Grid.Row="2" ColumnDefinitions="*,16,*">
+        <ScrollViewer Grid.Column="1">
+            <StackPanel Margin="32" Spacing="20">
+                <StackPanel>
+                    <TextBlock FontSize="28" FontWeight="SemiBold" Text="Diagnostics" />
+                    <TextBlock Margin="0,6,0,0" Opacity="0.65" Text="Quick test checks network state, DNS and repeated TCP reachability." />
+                </StackPanel>
                 <Border Padding="20" CornerRadius="10" BorderThickness="1" BorderBrush="#CBD5E1">
-                    <StackPanel Spacing="10">
+                    <StackPanel Spacing="12">
                         <TextBlock FontSize="18" FontWeight="SemiBold" Text="Quick test" />
-                        <TextBlock TextWrapping="Wrap"
-                                   Text="A short health snapshot of the local path and internet reachability." />
-                        <Button HorizontalAlignment="Left" IsEnabled="False" Content="Coming in Phase 2" />
+                        <Button Name="QuickTestButton" HorizontalAlignment="Left" Click="RunQuickTest" Content="Run quick test" />
+                        <TextBlock Name="QuickTestStatus" TextWrapping="Wrap" Text="Not run yet." />
                     </StackPanel>
                 </Border>
-
-                <Border Grid.Column="2" Padding="20" CornerRadius="10" BorderThickness="1" BorderBrush="#CBD5E1">
-                    <StackPanel Spacing="10">
-                        <TextBlock FontSize="18" FontWeight="SemiBold" Text="Comprehensive test" />
-                        <TextBlock TextWrapping="Wrap"
-                                   Text="Runs every supported diagnostic stage and correlates the evidence." />
-                        <Button HorizontalAlignment="Left" IsEnabled="False" Content="Coming in Phase 2" />
+                <Border Padding="20" CornerRadius="10" BorderThickness="1" BorderBrush="#CBD5E1">
+                    <StackPanel Spacing="12">
+                        <TextBlock FontSize="18" FontWeight="SemiBold" Text="FSPL calculator" />
+                        <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,12,Auto,12,Auto">
+                            <TextBox Name="DistanceKm" Watermark="Distance (km)" Text="1" />
+                            <TextBox Grid.Column="2" Name="FrequencyMHz" Watermark="Frequency (MHz)" Text="5800" />
+                            <Button Grid.Row="2" Grid.ColumnSpan="3" HorizontalAlignment="Left" Click="CalculateFspl" Content="Calculate FSPL" />
+                            <TextBlock Grid.Row="4" Grid.ColumnSpan="3" Name="FsplResult" Text="Result: —" />
+                        </Grid>
                     </StackPanel>
                 </Border>
-            </Grid>
-        </Grid>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Window>

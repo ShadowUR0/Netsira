@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import {
-  IconActivityHeartbeat,
-  IconAntennaBars5,
-  IconCalculator,
-  IconHistory,
-  IconSettings,
-} from '@tabler/icons-react'
+import { useState } from 'react'
+import { IconActivityHeartbeat, IconAntennaBars5, IconCalculator, IconHistory, IconSettings } from '@tabler/icons-react'
+import { runWebQuickTest } from './diagnostics/quick'
+import { fsplDb } from './core/rf'
 
 const nav = [
   ['Diagnostics', IconActivityHeartbeat],
@@ -16,6 +13,30 @@ const nav = [
 ] as const
 
 export function App() {
+  const [quick, setQuick] = useState('Not run yet.')
+  const [running, setRunning] = useState(false)
+  const [distance, setDistance] = useState('1')
+  const [frequency, setFrequency] = useState('5800')
+  const [fspl, setFspl] = useState('—')
+
+  async function runQuick() {
+    setRunning(true)
+    setQuick('Running…')
+    const r = await runWebQuickTest()
+    setQuick([
+      'Browser online: ' + (r.online ? 'yes' : 'no'),
+      'HTTPS reachability: ' + (r.httpsReachable ? 'ok' : 'failed'),
+      'Request time: ' + (r.latencyMs === null ? 'unavailable' : r.latencyMs.toFixed(1) + ' ms'),
+      r.finding,
+    ].join('\n'))
+    setRunning(false)
+  }
+
+  function calculate() {
+    try { setFspl(fsplDb(Number(distance), Number(frequency)).toFixed(2) + ' dB') }
+    catch { setFspl('Invalid values') }
+  }
+
   return (
     <div className="page">
       <aside className="navbar navbar-vertical navbar-expand-lg" data-bs-theme="dark">
@@ -24,7 +45,7 @@ export function App() {
           <div className="navbar-nav">
             {nav.map(([label, Icon], index) => (
               <div className="nav-item" key={label}>
-                <a className={`nav-link ${index === 0 ? 'active' : ''}`} href="#" onClick={(e) => e.preventDefault()}>
+                <a className={'nav-link ' + (index === 0 ? 'active' : '')} href="#" onClick={(e) => e.preventDefault()}>
                   <span className="nav-link-icon d-md-none d-lg-inline-block"><Icon size={20} /></span>
                   <span className="nav-link-title">{label}</span>
                 </a>
@@ -33,41 +54,25 @@ export function App() {
           </div>
         </div>
       </aside>
-
       <div className="page-wrapper">
-        <div className="page-header d-print-none">
-          <div className="container-xl">
-            <h2 className="page-title">Diagnostics</h2>
-            <div className="text-secondary mt-1">
-              Browser-safe diagnostics and calculators. Native apps provide deeper LAN and CPE access.
-            </div>
-          </div>
-        </div>
-
-        <div className="page-body">
-          <div className="container-xl">
-            <div className="row row-cards">
-              <div className="col-md-6">
-                <div className="card">
-                  <div className="card-body">
-                    <h3 className="card-title">Internet test</h3>
-                    <p className="text-secondary">Latency, jitter, loss and public throughput measurement arrive in the next milestone.</p>
-                    <button className="btn btn-primary" disabled>Phase 2</button>
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-6">
-                <div className="card">
-                  <div className="card-body">
-                    <h3 className="card-title">RF calculators</h3>
-                    <p className="text-secondary">FSPL, Fresnel, EIRP, link budget and dBm/mW share the same rules as native apps.</p>
-                    <button className="btn btn-primary" disabled>Phase 2</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <div className="page-header d-print-none"><div className="container-xl">
+          <h2 className="page-title">Diagnostics</h2>
+          <div className="text-secondary mt-1">The web edition only runs diagnostics browsers can safely expose.</div>
+        </div></div>
+        <div className="page-body"><div className="container-xl"><div className="row row-cards">
+          <div className="col-lg-6"><div className="card h-100"><div className="card-body">
+            <h3 className="card-title">Quick test</h3>
+            <button className="btn btn-primary mb-3" disabled={running} onClick={runQuick}>{running ? 'Running…' : 'Run quick test'}</button>
+            <pre className="diagnostic-output">{quick}</pre>
+          </div></div></div>
+          <div className="col-lg-6"><div className="card h-100"><div className="card-body">
+            <h3 className="card-title">FSPL calculator</h3>
+            <div className="mb-3"><label className="form-label">Distance (km)</label><input className="form-control" value={distance} onChange={(e) => setDistance(e.target.value)} inputMode="decimal" /></div>
+            <div className="mb-3"><label className="form-label">Frequency (MHz)</label><input className="form-control" value={frequency} onChange={(e) => setFrequency(e.target.value)} inputMode="decimal" /></div>
+            <button className="btn btn-primary" onClick={calculate}>Calculate</button>
+            <div className="mt-3"><strong>Result:</strong> {fspl}</div>
+          </div></div></div>
+        </div></div></div>
       </div>
     </div>
   )

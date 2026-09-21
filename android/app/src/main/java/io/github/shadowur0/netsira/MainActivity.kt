@@ -4,51 +4,40 @@ package io.github.shadowur0.netsira
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import io.github.shadowur0.netsira.core.RfCalculators
+import io.github.shadowur0.netsira.diagnostics.QuickDiagnostic
 import io.github.shadowur0.netsira.ui.NetsiraTheme
+import kotlinx.coroutines.launch
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            NetsiraTheme {
-                NetsiraApp()
-            }
-        }
+        setContent { NetsiraTheme { NetsiraApp() } }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun NetsiraApp() {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Netsira")
-                        Text("Network diagnostics", style = MaterialTheme.typography.labelMedium)
-                    }
-                }
-            )
-        }
-    ) { padding ->
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var running by remember { mutableStateOf(false) }
+    var resultText by remember { mutableStateOf("Not run yet.") }
+    var distance by remember { mutableStateOf("1") }
+    var frequency by remember { mutableStateOf("5800") }
+    var fspl by remember { mutableStateOf("—") }
+
+    Scaffold(topBar = { TopAppBar(title = { Column { Text("Netsira"); Text("Network diagnostics", style = MaterialTheme.typography.labelMedium) } }) }) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(16.dp),
@@ -56,28 +45,44 @@ private fun NetsiraApp() {
         ) {
             item { Text("Diagnostics", style = MaterialTheme.typography.headlineMedium) }
             item {
-                DiagnosticCard(
-                    title = "Quick test",
-                    description = "A short health snapshot using the checks available on this phone."
-                )
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Quick test", style = MaterialTheme.typography.titleMedium)
+                        Button(enabled = !running, onClick = {
+                            running = true
+                            resultText = "Running…"
+                            scope.launch {
+                                val r = QuickDiagnostic(context).run()
+                                resultText = buildString {
+                                    appendLine("Network: " + if (r.hasNetwork) r.transport else "unavailable")
+                                    appendLine("DNS: " + if (r.dnsOk) "ok" else "failed")
+                                    appendLine("Latency: " + (r.averageLatencyMs?.let { String.format(Locale.US, "%.1f ms", it) } ?: "unavailable"))
+                                    appendLine("Jitter: " + (r.jitterMs?.let { String.format(Locale.US, "%.1f ms", it) } ?: "unavailable"))
+                                    appendLine("Probe loss: " + r.lossPercent.toInt() + "%")
+                                    r.findings.forEach { appendLine("• " + it) }
+                                }.trim()
+                                running = false
+                            }
+                        }) { Text(if (running) "Running…" else "Run quick test") }
+                        Text(resultText)
+                    }
+                }
             }
             item {
-                DiagnosticCard(
-                    title = "Comprehensive test",
-                    description = "All supported stages with correlated findings and evidence."
-                )
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("FSPL calculator", style = MaterialTheme.typography.titleMedium)
+                        OutlinedTextField(value = distance, onValueChange = { distance = it }, label = { Text("Distance (km)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                        OutlinedTextField(value = frequency, onValueChange = { frequency = it }, label = { Text("Frequency (MHz)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                        Button(onClick = {
+                            val dv = distance.toDoubleOrNull()
+                            val fv = frequency.toDoubleOrNull()
+                            fspl = if (dv != null && fv != null && dv > 0 && fv > 0) String.format(Locale.US, "%.2f dB", RfCalculators.fsplDb(dv, fv)) else "Invalid values"
+                        }) { Text("Calculate") }
+                        Text("Result: " + fspl)
+                    }
+                }
             }
         }
-    }
-}
-
-@Composable
-private fun DiagnosticCard(title: String, description: String) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        ListItem(
-            headlineContent = { Text(title) },
-            supportingContent = { Text(description) },
-            trailingContent = { Text("Phase 2", style = MaterialTheme.typography.labelMedium) }
-        )
     }
 }

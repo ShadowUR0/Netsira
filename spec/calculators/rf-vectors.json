@@ -1,0 +1,10 @@
+{
+  "version": "0.1.0",
+  "cases": [
+    {"name":"FSPL 1 km at 2.4 GHz","operation":"fspl","input":{"distanceKm":1.0,"frequencyMHz":2400.0},"expected":100.05,"tolerance":0.05},
+    {"name":"FSPL 1 km at 5.8 GHz","operation":"fspl","input":{"distanceKm":1.0,"frequencyMHz":5800.0},"expected":107.71,"tolerance":0.05},
+    {"name":"First Fresnel radius midpoint 1 km at 5.8 GHz","operation":"fresnel","input":{"d1Km":0.5,"d2Km":0.5,"frequencyGHz":5.8},"expected":3.60,"tolerance":0.05},
+    {"name":"EIRP","operation":"eirp","input":{"txPowerDbm":20.0,"antennaGainDbi":16.0,"cableLossDb":1.0},"expected":35.0,"tolerance":0.001},
+    {"name":"dBm to mW","operation":"dbmToMw","input":{"dbm":20.0},"expected":100.0,"tolerance":0.001}
+  ]
+}

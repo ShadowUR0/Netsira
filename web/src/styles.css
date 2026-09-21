@@ -1,17 +1,14 @@
-:root {
-  --netsira-brand: #2563eb;
-}
-
-.navbar-brand {
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-.page {
-  min-height: 100vh;
-}
-
-.btn-primary {
-  --tblr-btn-bg: var(--netsira-brand);
-  --tblr-btn-border-color: var(--netsira-brand);
+:root { --netsira-brand: #2563eb; }
+.navbar-brand { font-weight: 700; letter-spacing: -0.02em; }
+.page { min-height: 100vh; }
+.btn-primary { --tblr-btn-bg: var(--netsira-brand); --tblr-btn-border-color: var(--netsira-brand); }
+.diagnostic-output {
+  min-height: 9rem;
+  margin: 0;
+  padding: 0.75rem;
+  white-space: pre-wrap;
+  border-radius: 0.5rem;
+  background: var(--tblr-bg-surface-secondary);
+  color: inherit;
+  font-family: var(--tblr-font-sans-serif);
 }
