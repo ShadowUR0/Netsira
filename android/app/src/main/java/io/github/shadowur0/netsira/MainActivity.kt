@@ -272,7 +272,7 @@ private fun NetsiraApp() {
                 Button(
                     enabled = lastQuick != null || lastSpeed != null || lastAirOs != null,
                     onClick = {
-                        pendingReport = AndroidReportBuilder.build(sessionStartedAt, lastQuick, lastSpeed, lastAirOs, lastMode)
+                        pendingReport = AndroidReportBuilder.build(sessionStartedAt, lastQuick, lastSpeed, lastAirOs, lastStability, lastMode)
                         exportLauncher.launch("netsira-report-" + System.currentTimeMillis() + ".json")
                     }
                 ) { Text("Export report") }

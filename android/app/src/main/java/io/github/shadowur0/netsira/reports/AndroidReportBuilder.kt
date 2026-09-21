@@ -2,6 +2,7 @@
 package io.github.shadowur0.netsira.reports
 
 import io.github.shadowur0.netsira.devices.AirOsSnapshot
+import io.github.shadowur0.netsira.devices.StabilitySummary
 import io.github.shadowur0.netsira.diagnostics.DiagnosticFinding
 import io.github.shadowur0.netsira.diagnostics.FindingEngine
 import io.github.shadowur0.netsira.diagnostics.Ndt7Result
@@ -17,6 +18,7 @@ object AndroidReportBuilder {
         quick: QuickDiagnosticResult?,
         speed: Ndt7Result?,
         airOs: AirOsSnapshot?,
+        stability: StabilitySummary? = null,
         mode: String? = null
     ): String {
         val stages = JSONArray()
@@ -80,6 +82,40 @@ object AndroidReportBuilder {
                         .putNullable("cpuLoadPercent", airOs.cpuLoadPercent))
             )
             addFindings(findings, cpeFindings)
+        }
+
+        if (stability != null) {
+            val internetStatus = when {
+                stability.probeLossPercent >= 20 -> "problem"
+                stability.probeLossPercent > 0 ||
+                    (stability.averageLatencyMs ?: 0.0) >= 200 ||
+                    (stability.jitterMs ?: 0.0) >= 50 -> "warning"
+                else -> "info"
+            }
+
+            stages.put(
+                JSONObject()
+                    .put("id", "internet")
+                    .put("status", internetStatus)
+                    .put("metrics", JSONObject()
+                        .put("stabilitySampleCount", stability.sampleCount)
+                        .put("probeLossPercent", stability.probeLossPercent)
+                        .putNullable("averageLatencyMs", stability.averageLatencyMs)
+                        .putNullable("jitterMs", stability.jitterMs))
+            )
+
+            if (stability.bestSignalDbm != null || stability.worstSignalDbm != null || stability.averageSnrDb != null) {
+                stages.put(
+                    JSONObject()
+                        .put("id", "wireless")
+                        .put("status", if ((stability.signalSpreadDb ?: 0.0) >= 8) "warning" else "info")
+                        .put("metrics", JSONObject()
+                            .putNullable("bestSignalDbm", stability.bestSignalDbm)
+                            .putNullable("worstSignalDbm", stability.worstSignalDbm)
+                            .putNullable("signalSpreadDb", stability.signalSpreadDb)
+                            .putNullable("averageSnrDb", stability.averageSnrDb))
+                )
+            }
         }
 
         val metadata = JSONObject()
