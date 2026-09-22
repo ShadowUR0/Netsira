@@ -44,11 +44,16 @@ jobs:
         run: |
           dotnet restore desktop/Netsira.Desktop/Netsira.Desktop.csproj
           dotnet publish desktop/Netsira.Desktop/Netsira.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o release-assets/windows
+          $exe = Get-ChildItem release-assets/windows -Filter *.exe | Select-Object -First 1
+          if (-not $exe) { throw "Published Windows executable was not found." }
+          Copy-Item $exe.FullName release-assets/Netsira-Windows-x64.exe
           Compress-Archive -Path release-assets/windows/* -DestinationPath release-assets/Netsira-Windows-x64.zip
       - uses: actions/upload-artifact@v4
         with:
           name: release-windows
-          path: release-assets/Netsira-Windows-x64.zip
+          path: |
+            release-assets/Netsira-Windows-x64.exe
+            release-assets/Netsira-Windows-x64.zip
 
   web:
     if: contains(github.event.head_commit.message, '[release]')
@@ -97,7 +102,8 @@ jobs:
 
           Includes:
           - Android debug APK
-          - Windows x64 self-contained package
+          - Windows x64 direct EXE
+          - Windows x64 ZIP package
           - Static Web build
           - SHA256 checksums
 
