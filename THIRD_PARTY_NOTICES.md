@@ -29,3 +29,12 @@ External service:
 - Measurement Lab NDT7 is used for optional public internet throughput measurements. M-Lab has its own privacy policy and publishes measurement data. Netsira must disclose this before users start the test.
 
 Do not vendor ApexCharts through Tabler. Netsira will use a separately audited chart library.
+
+
+## Desktop UI shell
+
+- Semi.Avalonia — MIT — Avalonia theme inspired by Semi Design.
+- Irihi.Ursa — MIT — Avalonia control library.
+- Irihi.Ursa.Themes.Semi — MIT — Semi theme package for Ursa controls.
+
+Netsira uses these packages through NuGet. No proprietary Semi extension packages are included.

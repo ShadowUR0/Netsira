@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Netsira.Desktop.Core;
@@ -30,34 +29,27 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        SetNavigationState(DiagnosticsNavButton);
+        AppNavMenu.SelectedItem = DiagnosticsNavItem;
+        ShowPage(DiagnosticsPage);
     }
 
-    private void ShowPage(Control page, Button activeButton)
+    private void ShowPage(Control page)
     {
         DiagnosticsPage.IsVisible = ReferenceEquals(page, DiagnosticsPage);
         DevicesPage.IsVisible = ReferenceEquals(page, DevicesPage);
         CalculatorsPage.IsVisible = ReferenceEquals(page, CalculatorsPage);
         HistoryPage.IsVisible = ReferenceEquals(page, HistoryPage);
         SettingsPage.IsVisible = ReferenceEquals(page, SettingsPage);
-        SetNavigationState(activeButton);
     }
 
-    private void SetNavigationState(Button activeButton)
+    private void OnNavSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        foreach (var button in new[] { DiagnosticsNavButton, DevicesNavButton, CalculatorsNavButton, HistoryNavButton, SettingsNavButton })
-        {
-            var active = ReferenceEquals(button, activeButton);
-            button.Background = new SolidColorBrush(Color.Parse(active ? "#1E3A5F" : "#0F172A"));
-            button.Foreground = new SolidColorBrush(Color.Parse(active ? "#FFFFFF" : "#CBD5E1"));
-        }
+        if (ReferenceEquals(AppNavMenu.SelectedItem, DiagnosticsNavItem)) ShowPage(DiagnosticsPage);
+        else if (ReferenceEquals(AppNavMenu.SelectedItem, DevicesNavItem)) ShowPage(DevicesPage);
+        else if (ReferenceEquals(AppNavMenu.SelectedItem, CalculatorsNavItem)) ShowPage(CalculatorsPage);
+        else if (ReferenceEquals(AppNavMenu.SelectedItem, HistoryNavItem)) ShowPage(HistoryPage);
+        else if (ReferenceEquals(AppNavMenu.SelectedItem, SettingsNavItem)) ShowPage(SettingsPage);
     }
-
-    private void NavigateDiagnostics(object? sender, RoutedEventArgs e) => ShowPage(DiagnosticsPage, DiagnosticsNavButton);
-    private void NavigateDevices(object? sender, RoutedEventArgs e) => ShowPage(DevicesPage, DevicesNavButton);
-    private void NavigateCalculators(object? sender, RoutedEventArgs e) => ShowPage(CalculatorsPage, CalculatorsNavButton);
-    private void NavigateHistory(object? sender, RoutedEventArgs e) => ShowPage(HistoryPage, HistoryNavButton);
-    private void NavigateSettings(object? sender, RoutedEventArgs e) => ShowPage(SettingsPage, SettingsNavButton);
 
     private void UpdateQuickVisuals(QuickDiagnosticResult result)
     {

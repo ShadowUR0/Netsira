@@ -1,313 +1,410 @@
-<Window x:Class="Netsira.Desktop.MainWindow"
+<Window
+    x:Class="Netsira.Desktop.MainWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:u="https://irihi.tech/ursa"
     Title="Netsira"
     Width="1180"
-    Height="820"
+    Height="780"
     MinWidth="900"
     MinHeight="620">
 
-    <Grid ColumnDefinitions="240,*">
-        <Border Grid.Column="0" Padding="18" Background="#0F172A">
-            <Grid RowDefinitions="Auto,24,*,Auto">
-                <StackPanel Orientation="Horizontal" Spacing="12">
-                    <Border Width="40" Height="40" CornerRadius="12" Background="#2563EB">
-                        <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center"
-                                   Foreground="White" FontSize="20" FontWeight="Bold" Text="N" />
-                    </Border>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Foreground="White" FontSize="20" FontWeight="SemiBold" Text="Netsira" />
-                        <TextBlock Foreground="#94A3B8" FontSize="12" Text="Network diagnostics" />
+    <Grid ColumnDefinitions="Auto,*" Background="{DynamicResource SemiColorBg0}">
+        <Border
+            Grid.Column="0"
+            Margin="12"
+            Padding="6"
+            Theme="{DynamicResource CardBorder}">
+            <u:NavMenu
+                x:Name="AppNavMenu"
+                ExpandWidth="228"
+                CollapseWidth="64"
+                SelectionChanged="OnNavSelectionChanged">
+                <u:NavMenu.Header>
+                    <StackPanel Margin="10,14,10,18">
+                        <TextBlock FontSize="22" FontWeight="Bold" Text="Netsira" />
+                        <TextBlock
+                            Margin="0,4,0,0"
+                            FontSize="12"
+                            Foreground="{DynamicResource SemiColorText2}"
+                            Text="Network diagnostics" />
                     </StackPanel>
-                </StackPanel>
+                </u:NavMenu.Header>
 
-                <StackPanel Grid.Row="2" Spacing="6">
-                    <Button Name="DiagnosticsNavButton" MinHeight="44" HorizontalContentAlignment="Left"
-                            Click="NavigateDiagnostics" Content="⌂   Diagnostics" />
-                    <Button Name="DevicesNavButton" MinHeight="44" HorizontalContentAlignment="Left"
-                            Click="NavigateDevices" Content="◉   Devices" />
-                    <Button Name="CalculatorsNavButton" MinHeight="44" HorizontalContentAlignment="Left"
-                            Click="NavigateCalculators" Content="∑   Calculators" />
-                    <Button Name="HistoryNavButton" MinHeight="44" HorizontalContentAlignment="Left"
-                            Click="NavigateHistory" Content="↺   History" />
-                    <Button Name="SettingsNavButton" MinHeight="44" HorizontalContentAlignment="Left"
-                            Click="NavigateSettings" Content="⚙   Settings" />
-                </StackPanel>
+                <u:NavMenuItem x:Name="DiagnosticsNavItem" Header="Diagnostics">
+                    <u:NavMenuItem.Icon>
+                        <TextBlock Text="●" />
+                    </u:NavMenuItem.Icon>
+                </u:NavMenuItem>
+                <u:NavMenuItem x:Name="DevicesNavItem" Header="Devices">
+                    <u:NavMenuItem.Icon>
+                        <TextBlock Text="◉" />
+                    </u:NavMenuItem.Icon>
+                </u:NavMenuItem>
+                <u:NavMenuItem x:Name="CalculatorsNavItem" Header="Calculators">
+                    <u:NavMenuItem.Icon>
+                        <TextBlock Text="∑" />
+                    </u:NavMenuItem.Icon>
+                </u:NavMenuItem>
+                <u:NavMenuItem x:Name="HistoryNavItem" Header="History">
+                    <u:NavMenuItem.Icon>
+                        <TextBlock Text="↺" />
+                    </u:NavMenuItem.Icon>
+                </u:NavMenuItem>
+                <u:NavMenuItem x:Name="SettingsNavItem" Header="Settings">
+                    <u:NavMenuItem.Icon>
+                        <TextBlock Text="⚙" />
+                    </u:NavMenuItem.Icon>
+                </u:NavMenuItem>
 
-                <StackPanel Grid.Row="3">
-                    <TextBlock Foreground="#94A3B8" FontSize="12" Text="Local-first" />
-                    <TextBlock Foreground="#94A3B8" FontSize="12" Text="No hidden telemetry" />
-                </StackPanel>
-            </Grid>
+                <u:NavMenu.Footer>
+                    <StackPanel Margin="10,16">
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{DynamicResource SemiColorText2}"
+                            Text="Local-first · no telemetry" />
+                    </StackPanel>
+                </u:NavMenu.Footer>
+            </u:NavMenu>
         </Border>
 
         <Grid Grid.Column="1">
-            <ScrollViewer Name="DiagnosticsPage" IsVisible="True">
-                <StackPanel Margin="32" Spacing="18" MaxWidth="1040">
+            <ScrollViewer x:Name="DiagnosticsPage">
+                <StackPanel Margin="18,18,28,32" Spacing="16">
                     <Grid ColumnDefinitions="*,Auto">
                         <StackPanel>
-                            <TextBlock Foreground="#2563EB" FontSize="12" FontWeight="Bold" Text="NETWORK HEALTH" />
-                            <TextBlock FontSize="34" FontWeight="Bold" Text="Diagnostics" />
-                            <TextBlock Opacity="0.68"
-                                       Text="Start with a quick check. Open advanced tests only when you need them." />
+                            <TextBlock
+                                FontSize="12"
+                                FontWeight="Bold"
+                                Foreground="{DynamicResource SemiBlue5}"
+                                Text="NETWORK HEALTH" />
+                            <TextBlock Margin="0,3,0,0" FontSize="34" FontWeight="Bold" Text="Diagnostics" />
+                            <TextBlock
+                                Margin="0,6,0,0"
+                                Foreground="{DynamicResource SemiColorText2}"
+                                Text="Start with a quick check. Open deeper tests only when you need them." />
                         </StackPanel>
-                        <Button Grid.Column="1" Name="ExportReportButton" IsEnabled="False"
-                                MinHeight="42" Click="ExportReport" Content="Export report" />
+                        <Button
+                            x:Name="ExportReportButton"
+                            Grid.Column="1"
+                            VerticalAlignment="Top"
+                            IsEnabled="False"
+                            Click="ExportReport"
+                            Content="Export report" />
                     </Grid>
 
-                    <Border Padding="22" CornerRadius="14" BorderThickness="1" BorderBrush="#475569">
-                        <Grid ColumnDefinitions="*,18,320">
-                            <StackPanel Spacing="10">
-                                <TextBlock Name="OverallStatus" FontSize="14" FontWeight="SemiBold" Text="Not tested" />
-                                <TextBlock FontSize="22" FontWeight="SemiBold"
-                                           Text="Run a quick check to see what is healthy." />
-                                <TextBlock Opacity="0.68" TextWrapping="Wrap"
-                                           Text="Netsira checks reachability, DNS, latency and loss first, then shows the important finding before raw values." />
+                    <Border Padding="22" Theme="{DynamicResource CardBorder}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
+                            <StackPanel>
+                                <TextBlock
+                                    x:Name="OverallStatus"
+                                    FontWeight="Bold"
+                                    Foreground="{DynamicResource SemiBlue5}"
+                                    Text="Not tested" />
+                                <TextBlock
+                                    Margin="0,10,0,0"
+                                    FontSize="24"
+                                    FontWeight="Bold"
+                                    Text="Run a quick check to see what is healthy." />
+                                <TextBlock
+                                    x:Name="QuickTestStatus"
+                                    Margin="0,8,0,0"
+                                    MaxWidth="680"
+                                    TextWrapping="Wrap"
+                                    Foreground="{DynamicResource SemiColorText2}"
+                                    Text="Netsira checks network reachability, DNS, latency and loss first." />
                             </StackPanel>
-
-                            <Button Grid.Column="2" Name="QuickTestButton" MinHeight="74"
-                                    Click="RunQuickTest" Content="Run quick check" />
+                            <Button
+                                x:Name="QuickTestButton"
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                MinWidth="150"
+                                MinHeight="44"
+                                Click="RunQuickTest"
+                                Content="Run quick check" />
                         </Grid>
                     </Border>
 
-                    <Border Padding="14" CornerRadius="12" BorderThickness="1" BorderBrush="#475569">
-                        <Grid ColumnDefinitions="*,36,*,36,*">
-                            <Border Padding="12" CornerRadius="10" Background="#13213A">
-                                <StackPanel>
-                                    <TextBlock FontWeight="Bold" Text="1  Computer" />
-                                    <TextBlock FontSize="12" Opacity="0.65" Text="Ready" />
-                                </StackPanel>
-                            </Border>
-                            <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Opacity="0.5" Text="→" />
-                            <Border Grid.Column="2" Padding="12" CornerRadius="10" Background="#13213A">
-                                <StackPanel>
-                                    <TextBlock FontWeight="Bold" Text="2  Network" />
-                                    <TextBlock Name="PathNetworkState" FontSize="12" Opacity="0.75" Text="Not tested" />
-                                </StackPanel>
-                            </Border>
-                            <TextBlock Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Center" Opacity="0.5" Text="→" />
-                            <Border Grid.Column="4" Padding="12" CornerRadius="10" Background="#13213A">
-                                <StackPanel>
-                                    <TextBlock FontWeight="Bold" Text="3  Internet" />
-                                    <TextBlock Name="PathInternetState" FontSize="12" Opacity="0.75" Text="Not tested" />
-                                </StackPanel>
-                            </Border>
+                    <Border Padding="18" Theme="{DynamicResource CardBorder}">
+                        <Grid ColumnDefinitions="*,28,*,28,*">
+                            <StackPanel>
+                                <TextBlock FontWeight="Bold" Text="Computer" />
+                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Ready" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Text="→" />
+                            <StackPanel Grid.Column="2">
+                                <TextBlock FontWeight="Bold" Text="Network" />
+                                <TextBlock x:Name="PathNetworkState" FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Not tested" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Center" Text="→" />
+                            <StackPanel Grid.Column="4">
+                                <TextBlock FontWeight="Bold" Text="Internet" />
+                                <TextBlock x:Name="PathInternetState" FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Not tested" />
+                            </StackPanel>
                         </Grid>
                     </Border>
 
                     <Grid ColumnDefinitions="*,12,*,12,*,12,*">
-                        <Border Padding="16" CornerRadius="12" BorderThickness="1" BorderBrush="#475569">
+                        <Border Padding="16" Theme="{DynamicResource CardBorder}">
                             <StackPanel>
-                                <TextBlock Opacity="0.6" FontSize="12" Text="INTERNET" />
-                                <TextBlock Name="InternetMetric" FontSize="22" FontWeight="Bold" Text="—" />
-                                <ProgressBar Name="InternetHealthBar" Height="6" Margin="0,8,0,5" Minimum="0" Maximum="100" Value="0" />
-                                <TextBlock Opacity="0.6" FontSize="12" Text="Reachability / latency" />
+                                <TextBlock FontSize="11" Foreground="{DynamicResource SemiColorText2}" Text="INTERNET" />
+                                <TextBlock x:Name="InternetMetric" Margin="0,6,0,0" FontSize="22" FontWeight="Bold" Text="—" />
+                                <ProgressBar x:Name="InternetHealthBar" Margin="0,10,0,6" Height="6" Minimum="0" Maximum="100" Value="0" />
+                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Reachability / latency" />
                             </StackPanel>
                         </Border>
-                        <Border Grid.Column="2" Padding="16" CornerRadius="12" BorderThickness="1" BorderBrush="#475569">
+                        <Border Grid.Column="2" Padding="16" Theme="{DynamicResource CardBorder}">
                             <StackPanel>
-                                <TextBlock Opacity="0.6" FontSize="12" Text="LOSS" />
-                                <TextBlock Name="LossMetric" FontSize="22" FontWeight="Bold" Text="—" />
-                                <ProgressBar Name="LossHealthBar" Height="6" Margin="0,8,0,5" Minimum="0" Maximum="100" Value="0" />
-                                <TextBlock Opacity="0.6" FontSize="12" Text="Successful probes" />
+                                <TextBlock FontSize="11" Foreground="{DynamicResource SemiColorText2}" Text="LOSS" />
+                                <TextBlock x:Name="LossMetric" Margin="0,6,0,0" FontSize="22" FontWeight="Bold" Text="—" />
+                                <ProgressBar x:Name="LossHealthBar" Margin="0,10,0,6" Height="6" Minimum="0" Maximum="100" Value="0" />
+                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Successful probes" />
                             </StackPanel>
                         </Border>
-                        <Border Grid.Column="4" Padding="16" CornerRadius="12" BorderThickness="1" BorderBrush="#475569">
+                        <Border Grid.Column="4" Padding="16" Theme="{DynamicResource CardBorder}">
                             <StackPanel>
-                                <TextBlock Opacity="0.6" FontSize="12" Text="DOWNLOAD" />
-                                <TextBlock Name="DownloadMetric" FontSize="22" FontWeight="Bold" Text="—" />
-                                <TextBlock Opacity="0.6" FontSize="12" Text="Mb/s" />
+                                <TextBlock FontSize="11" Foreground="{DynamicResource SemiColorText2}" Text="DOWNLOAD" />
+                                <TextBlock x:Name="DownloadMetric" Margin="0,6,0,0" FontSize="22" FontWeight="Bold" Text="—" />
+                                <TextBlock Margin="0,16,0,0" FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Mb/s" />
                             </StackPanel>
                         </Border>
-                        <Border Grid.Column="6" Padding="16" CornerRadius="12" BorderThickness="1" BorderBrush="#475569">
+                        <Border Grid.Column="6" Padding="16" Theme="{DynamicResource CardBorder}">
                             <StackPanel>
-                                <TextBlock Opacity="0.6" FontSize="12" Text="STABILITY" />
-                                <TextBlock Name="StabilityMetric" FontSize="22" FontWeight="Bold" Text="—" />
-                                <ProgressBar Name="StabilityHealthBar" Height="6" Margin="0,8,0,5" Minimum="0" Maximum="100" Value="0" />
-                                <TextBlock Opacity="0.6" FontSize="12" Text="Successful probes" />
+                                <TextBlock FontSize="11" Foreground="{DynamicResource SemiColorText2}" Text="STABILITY" />
+                                <TextBlock x:Name="StabilityMetric" Margin="0,6,0,0" FontSize="22" FontWeight="Bold" Text="—" />
+                                <ProgressBar x:Name="StabilityHealthBar" Margin="0,10,0,6" Height="6" Minimum="0" Maximum="100" Value="0" />
+                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Successful probes" />
                             </StackPanel>
                         </Border>
                     </Grid>
 
-                    <Border Padding="20" CornerRadius="14" BorderThickness="1" BorderBrush="#475569">
-                        <StackPanel Spacing="12">
-                            <TextBlock FontSize="20" FontWeight="SemiBold" Text="What Netsira found" />
-                            <TextBlock Opacity="0.65" Text="Important findings first; raw measurements stay secondary." />
-                            <TextBlock Name="QuickTestStatus" TextWrapping="Wrap" Text="No test results yet." />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Padding="20" CornerRadius="14" BorderThickness="1" BorderBrush="#475569">
-                        <StackPanel Spacing="14">
-                            <TextBlock FontSize="20" FontWeight="SemiBold" Text="More tests" />
-                            <TextBlock Opacity="0.65" Text="Use these only when the quick check is not enough." />
-
-                            <Border Padding="14" CornerRadius="10" BorderThickness="1" BorderBrush="#334155">
-                                <StackPanel Spacing="10">
-                                    <TextBlock FontSize="17" FontWeight="SemiBold" Text="Stability · 30 seconds" />
-                                    <TextBlock Opacity="0.68" TextWrapping="Wrap"
-                                               Text="Repeats reachability checks and summarizes loss, latency and jitter. If airOS is available, signal and SNR are sampled too." />
-                                    <StackPanel Orientation="Horizontal" Spacing="10">
-                                        <Button Name="StabilityStartButton" Click="StartStability" Content="Run stability test" />
-                                        <Button Name="StabilityStopButton" Click="StopStability" IsEnabled="False" Content="Cancel" />
-                                    </StackPanel>
-                                    <TextBlock Name="StabilityStatus" TextWrapping="Wrap" Text="Not run yet." />
-                                </StackPanel>
-                            </Border>
-
-                            <Border Padding="14" CornerRadius="10" BorderThickness="1" BorderBrush="#334155">
-                                <StackPanel Spacing="10">
-                                    <TextBlock FontSize="17" FontWeight="SemiBold" Text="Internet speed" />
-                                    <TextBlock Opacity="0.68" TextWrapping="Wrap"
-                                               Text="Optional M-Lab test for download and upload. M-Lab records measurement metadata including your public IP." />
-                                    <CheckBox Name="MlabConsent"
-                                              Content="I understand the M-Lab privacy notice" />
-                                    <StackPanel Orientation="Horizontal" Spacing="10">
-                                        <Button Name="SpeedTestButton" Click="RunSpeedTest" Content="Run speed test" />
-                                        <Button Name="StandardTestButton" Click="RunStandardTest" Content="Run standard test" />
-                                    </StackPanel>
-                                    <TextBlock Name="SpeedTestStatus" TextWrapping="Wrap" Text="Not run yet." />
-                                </StackPanel>
-                            </Border>
-
-                            <Border Padding="14" CornerRadius="10" BorderThickness="1" BorderBrush="#334155">
-                                <StackPanel Spacing="10">
-                                    <TextBlock FontSize="17" FontWeight="SemiBold" Text="Comprehensive" />
-                                    <TextBlock Opacity="0.68" TextWrapping="Wrap"
-                                               Text="Combines internet checks with airOS device status when device credentials are available." />
-                                    <Button Name="ComprehensiveTestButton" HorizontalAlignment="Left"
-                                            Click="RunComprehensiveTest" Content="Run comprehensive test" />
-                                    <TextBlock Name="ModeTestStatus" TextWrapping="Wrap" Text="Not run yet." />
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-            </ScrollViewer>
-
-            <ScrollViewer Name="DevicesPage" IsVisible="False">
-                <StackPanel Margin="32" Spacing="18" MaxWidth="920">
-                    <StackPanel>
-                        <TextBlock Foreground="#2563EB" FontSize="12" FontWeight="Bold" Text="LOCAL NETWORK" />
-                        <TextBlock FontSize="34" FontWeight="Bold" Text="Devices" />
-                        <TextBlock Opacity="0.68" Text="Find a supported CPE and see radio health visually." />
-                    </StackPanel>
-
-                    <Border Padding="20" CornerRadius="14" BorderThickness="1" BorderBrush="#475569">
-                        <StackPanel Spacing="12">
-                            <TextBlock FontSize="20" FontWeight="SemiBold" Text="Find your Ubiquiti device" />
-                            <TextBlock Opacity="0.65" Text="Discovery stays on your local network and never sends credentials." />
-                            <Button Name="DiscoveryButton" HorizontalAlignment="Left"
-                                    Click="DiscoverDevices" Content="Discover devices" />
-                            <TextBlock Name="DiscoveryStatus" TextWrapping="Wrap" Text="Not scanned." />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Padding="20" CornerRadius="14" BorderThickness="1" BorderBrush="#475569">
+                    <Border Padding="20" Theme="{DynamicResource CardBorder}">
                         <StackPanel Spacing="10">
-                            <TextBlock FontSize="20" FontWeight="SemiBold" Text="Connect to airOS" />
-                            <TextBlock Opacity="0.65" Text="Credentials stay in memory and are not saved." />
-
-                            <TextBlock FontWeight="SemiBold" Text="Device address" />
-                            <TextBlock Opacity="0.6" FontSize="12" Text="Example: 192.168.1.20" />
-                            <TextBox Name="AirOsHost" Text="http://192.168.1.20" />
-
-                            <TextBlock FontWeight="SemiBold" Text="Username" />
-                            <TextBox Name="AirOsUser" Text="ubnt" />
-
-                            <TextBlock FontWeight="SemiBold" Text="Password" />
-                            <TextBox Name="AirOsPassword" PasswordChar="●" />
-
-                            <CheckBox Name="AllowInvalidCertificate"
-                                      Content="Allow a self-signed HTTPS certificate for this local connection" />
-                            <Button Name="AirOsButton" HorizontalAlignment="Left"
-                                    Click="ReadAirOs" Content="Read device status" />
-                            <TextBlock Name="AirOsStatus" TextWrapping="Wrap" Text="Not connected." />
+                            <TextBlock FontSize="19" FontWeight="Bold" Text="What Netsira found" />
+                            <TextBlock
+                                Foreground="{DynamicResource SemiColorText2}"
+                                Text="Important findings first; raw measurements stay secondary." />
+                            <TextBlock
+                                x:Name="DeviceFindingStatus"
+                                TextWrapping="Wrap"
+                                Text="No test results yet." />
                         </StackPanel>
                     </Border>
 
-                    <Grid ColumnDefinitions="*,12,*,12,*,12,*">
-                        <Border Padding="16" CornerRadius="12" BorderThickness="1" BorderBrush="#475569">
-                            <StackPanel>
-                                <TextBlock Opacity="0.6" FontSize="12" Text="SIGNAL" />
-                                <TextBlock Name="SignalMetric" FontSize="22" FontWeight="Bold" Text="—" />
-                                <ProgressBar Name="SignalQualityBar" Height="6" Margin="0,8,0,5" Minimum="0" Maximum="100" Value="0" />
-                                <TextBlock Opacity="0.6" FontSize="12" Text="Visual scale: -90 to -50 dBm" />
+                    <Grid ColumnDefinitions="*,12,*">
+                        <Border Padding="20" Theme="{DynamicResource CardBorder}">
+                            <StackPanel Spacing="10">
+                                <TextBlock FontSize="18" FontWeight="Bold" Text="Stability · 30 seconds" />
+                                <TextBlock
+                                    TextWrapping="Wrap"
+                                    Foreground="{DynamicResource SemiColorText2}"
+                                    Text="Repeated reachability checks. airOS signal is sampled too when device credentials are available." />
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button
+                                        x:Name="StabilityStartButton"
+                                        Click="StartStability"
+                                        Content="Run stability test" />
+                                    <Button
+                                        x:Name="StabilityStopButton"
+                                        IsEnabled="False"
+                                        Click="StopStability"
+                                        Content="Cancel" />
+                                </StackPanel>
+                                <TextBlock x:Name="StabilityStatus" TextWrapping="Wrap" Text="Not run yet." />
                             </StackPanel>
                         </Border>
-                        <Border Grid.Column="2" Padding="16" CornerRadius="12" BorderThickness="1" BorderBrush="#475569">
-                            <StackPanel>
-                                <TextBlock Opacity="0.6" FontSize="12" Text="SNR" />
-                                <TextBlock Name="SnrMetric" FontSize="22" FontWeight="Bold" Text="—" />
-                                <ProgressBar Name="SnrQualityBar" Height="6" Margin="0,8,0,5" Minimum="0" Maximum="100" Value="0" />
-                                <TextBlock Opacity="0.6" FontSize="12" Text="Visual scale: 0 to 30 dB" />
-                            </StackPanel>
-                        </Border>
-                        <Border Grid.Column="4" Padding="16" CornerRadius="12" BorderThickness="1" BorderBrush="#475569">
-                            <StackPanel>
-                                <TextBlock Opacity="0.6" FontSize="12" Text="ETHERNET" />
-                                <TextBlock Name="EthernetMetric" FontSize="22" FontWeight="Bold" Text="—" />
-                                <TextBlock Opacity="0.6" FontSize="12" Text="Link speed" />
-                            </StackPanel>
-                        </Border>
-                        <Border Grid.Column="6" Padding="16" CornerRadius="12" BorderThickness="1" BorderBrush="#475569">
-                            <StackPanel>
-                                <TextBlock Opacity="0.6" FontSize="12" Text="CPU" />
-                                <TextBlock Name="CpuMetric" FontSize="22" FontWeight="Bold" Text="—" />
-                                <ProgressBar Name="CpuLoadBar" Height="6" Margin="0,8,0,5" Minimum="0" Maximum="100" Value="0" />
-                                <TextBlock Opacity="0.6" FontSize="12" Text="Device load" />
+
+                        <Border Grid.Column="2" Padding="20" Theme="{DynamicResource CardBorder}">
+                            <StackPanel Spacing="10">
+                                <TextBlock FontSize="18" FontWeight="Bold" Text="Internet speed" />
+                                <TextBlock
+                                    TextWrapping="Wrap"
+                                    Foreground="{DynamicResource SemiColorText2}"
+                                    Text="Optional M-Lab throughput test. Measurement metadata includes your public IP." />
+                                <CheckBox
+                                    x:Name="MlabConsent"
+                                    Content="I understand the M-Lab privacy notice" />
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button
+                                        x:Name="SpeedTestButton"
+                                        Click="RunSpeedTest"
+                                        Content="Speed test" />
+                                    <Button
+                                        x:Name="StandardTestButton"
+                                        Click="RunStandardTest"
+                                        Content="Standard" />
+                                </StackPanel>
+                                <TextBlock x:Name="SpeedTestStatus" TextWrapping="Wrap" Text="Not run yet." />
+                                <TextBlock x:Name="ModeTestStatus" TextWrapping="Wrap" Foreground="{DynamicResource SemiColorText2}" Text="Not run yet." />
                             </StackPanel>
                         </Border>
                     </Grid>
 
-                    <Border Padding="20" CornerRadius="14" BorderThickness="1" BorderBrush="#475569">
-                        <StackPanel Spacing="12">
-                            <TextBlock FontSize="20" FontWeight="SemiBold" Text="Device findings" />
-                            <TextBlock Name="DeviceFindingStatus" TextWrapping="Wrap"
-                                       Text="Connect to a device to see interpreted findings." />
+                    <Border Padding="20" Theme="{DynamicResource CardBorder}">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel>
+                                <TextBlock FontSize="18" FontWeight="Bold" Text="Comprehensive test" />
+                                <TextBlock
+                                    Margin="0,5,0,0"
+                                    Foreground="{DynamicResource SemiColorText2}"
+                                    Text="Combines internet diagnostics with airOS device status when credentials are available." />
+                            </StackPanel>
+                            <Button
+                                x:Name="ComprehensiveTestButton"
+                                Grid.Column="1"
+                                Click="RunComprehensiveTest"
+                                Content="Run comprehensive" />
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="DevicesPage" IsVisible="False">
+                <StackPanel Margin="18,18,28,32" Spacing="16">
+                    <StackPanel>
+                        <TextBlock FontSize="12" FontWeight="Bold" Foreground="{DynamicResource SemiBlue5}" Text="LOCAL NETWORK" />
+                        <TextBlock Margin="0,3,0,0" FontSize="34" FontWeight="Bold" Text="Devices" />
+                        <TextBlock
+                            Margin="0,6,0,0"
+                            Foreground="{DynamicResource SemiColorText2}"
+                            Text="Discover a supported CPE and inspect radio health without changing its configuration." />
+                    </StackPanel>
+
+                    <Border Padding="20" Theme="{DynamicResource CardBorder}">
+                        <StackPanel Spacing="10">
+                            <TextBlock FontSize="18" FontWeight="Bold" Text="Find Ubiquiti devices" />
+                            <TextBlock Foreground="{DynamicResource SemiColorText2}" Text="Discovery stays on your local network." />
+                            <Button
+                                x:Name="DiscoveryButton"
+                                HorizontalAlignment="Left"
+                                Click="DiscoverDevices"
+                                Content="Discover devices" />
+                            <TextBlock x:Name="DiscoveryStatus" TextWrapping="Wrap" Text="Not scanned." />
                         </StackPanel>
                     </Border>
 
-                    <Border Padding="20" CornerRadius="14" BorderThickness="1" BorderBrush="#475569">
-                        <StackPanel Spacing="12">
-                            <TextBlock FontSize="20" FontWeight="SemiBold" Text="Antenna alignment" />
-                            <TextBlock Opacity="0.65"
-                                       Text="Live signal, SNR and chain values refresh once per second." />
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <Button Name="AlignmentStartButton" Click="StartAlignment" Content="Start alignment" />
-                                <Button Name="AlignmentStopButton" Click="StopAlignment" IsEnabled="False" Content="Stop" />
+                    <Border Padding="20" Theme="{DynamicResource CardBorder}">
+                        <StackPanel Spacing="10">
+                            <TextBlock FontSize="18" FontWeight="Bold" Text="Connect to airOS" />
+                            <TextBlock
+                                Foreground="{DynamicResource SemiColorText2}"
+                                Text="Credentials stay in memory and are not saved." />
+
+                            <Grid ColumnDefinitions="*,12,*">
+                                <StackPanel>
+                                    <TextBlock Margin="0,0,0,5" FontWeight="SemiBold" Text="Device address" />
+                                    <TextBox x:Name="AirOsHost" Text="http://192.168.1.20" Watermark="192.168.1.20" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Margin="0,0,0,5" FontWeight="SemiBold" Text="Username" />
+                                    <TextBox x:Name="AirOsUser" Text="ubnt" />
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel>
+                                <TextBlock Margin="0,0,0,5" FontWeight="SemiBold" Text="Password" />
+                                <TextBox x:Name="AirOsPassword" PasswordChar="●" />
                             </StackPanel>
-                            <TextBlock Name="AlignmentStatus" TextWrapping="Wrap" Text="Not running." />
+
+                            <CheckBox
+                                x:Name="AllowInvalidCertificate"
+                                Content="Allow a self-signed HTTPS certificate for this connection" />
+                            <Button
+                                x:Name="AirOsButton"
+                                HorizontalAlignment="Left"
+                                Click="ReadAirOs"
+                                Content="Read device status" />
+                            <TextBlock x:Name="AirOsStatus" TextWrapping="Wrap" Text="Not connected." />
+                        </StackPanel>
+                    </Border>
+
+                    <Grid ColumnDefinitions="*,12,*,12,*,12,*">
+                        <Border Padding="16" Theme="{DynamicResource CardBorder}">
+                            <StackPanel>
+                                <TextBlock FontSize="11" Foreground="{DynamicResource SemiColorText2}" Text="SIGNAL" />
+                                <TextBlock x:Name="SignalMetric" Margin="0,6,0,0" FontSize="22" FontWeight="Bold" Text="—" />
+                                <ProgressBar x:Name="SignalQualityBar" Margin="0,10,0,6" Height="6" Minimum="0" Maximum="100" Value="0" />
+                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Received power" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="2" Padding="16" Theme="{DynamicResource CardBorder}">
+                            <StackPanel>
+                                <TextBlock FontSize="11" Foreground="{DynamicResource SemiColorText2}" Text="SNR" />
+                                <TextBlock x:Name="SnrMetric" Margin="0,6,0,0" FontSize="22" FontWeight="Bold" Text="—" />
+                                <ProgressBar x:Name="SnrQualityBar" Margin="0,10,0,6" Height="6" Minimum="0" Maximum="100" Value="0" />
+                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Signal quality" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="4" Padding="16" Theme="{DynamicResource CardBorder}">
+                            <StackPanel>
+                                <TextBlock FontSize="11" Foreground="{DynamicResource SemiColorText2}" Text="ETHERNET" />
+                                <TextBlock x:Name="EthernetMetric" Margin="0,6,0,0" FontSize="22" FontWeight="Bold" Text="—" />
+                                <TextBlock Margin="0,16,0,0" FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Link speed" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="6" Padding="16" Theme="{DynamicResource CardBorder}">
+                            <StackPanel>
+                                <TextBlock FontSize="11" Foreground="{DynamicResource SemiColorText2}" Text="CPU" />
+                                <TextBlock x:Name="CpuMetric" Margin="0,6,0,0" FontSize="22" FontWeight="Bold" Text="—" />
+                                <ProgressBar x:Name="CpuLoadBar" Margin="0,10,0,6" Height="6" Minimum="0" Maximum="100" Value="0" />
+                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Device load" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <Border Padding="20" Theme="{DynamicResource CardBorder}">
+                        <StackPanel Spacing="10">
+                            <TextBlock FontSize="18" FontWeight="Bold" Text="Antenna alignment" />
+                            <TextBlock
+                                Foreground="{DynamicResource SemiColorText2}"
+                                Text="Live signal and SNR, refreshed every second." />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button
+                                    x:Name="AlignmentStartButton"
+                                    Click="StartAlignment"
+                                    Content="Start alignment" />
+                                <Button
+                                    x:Name="AlignmentStopButton"
+                                    IsEnabled="False"
+                                    Click="StopAlignment"
+                                    Content="Stop" />
+                            </StackPanel>
+                            <TextBlock x:Name="AlignmentStatus" TextWrapping="Wrap" Text="Not running." />
                         </StackPanel>
                     </Border>
                 </StackPanel>
             </ScrollViewer>
 
-            <ScrollViewer Name="CalculatorsPage" IsVisible="False">
-                <StackPanel Margin="32" Spacing="18" MaxWidth="760">
+            <ScrollViewer x:Name="CalculatorsPage" IsVisible="False">
+                <StackPanel Margin="18,18,28,32" Spacing="16">
                     <StackPanel>
-                        <TextBlock Foreground="#2563EB" FontSize="12" FontWeight="Bold" Text="RF TOOLS" />
-                        <TextBlock FontSize="34" FontWeight="Bold" Text="Calculators" />
-                        <TextBlock Opacity="0.68" Text="Engineering tools stay separate from diagnostics." />
+                        <TextBlock FontSize="12" FontWeight="Bold" Foreground="{DynamicResource SemiBlue5}" Text="RF TOOLS" />
+                        <TextBlock Margin="0,3,0,0" FontSize="34" FontWeight="Bold" Text="Calculators" />
+                        <TextBlock
+                            Margin="0,6,0,0"
+                            Foreground="{DynamicResource SemiColorText2}"
+                            Text="Engineering tools stay separate from diagnostics." />
                     </StackPanel>
 
-                    <Border Padding="20" CornerRadius="14" BorderThickness="1" BorderBrush="#475569">
+                    <Border Padding="22" MaxWidth="760" HorizontalAlignment="Left" Theme="{DynamicResource CardBorder}">
                         <StackPanel Spacing="12">
-                            <TextBlock FontSize="20" FontWeight="SemiBold" Text="Free-space path loss" />
-                            <TextBlock Opacity="0.65" Text="Estimate path loss from distance and frequency." />
-
-                            <TextBlock FontWeight="SemiBold" Text="Distance (km)" />
-                            <TextBox Name="DistanceKm" Text="1" />
-
-                            <TextBlock FontWeight="SemiBold" Text="Frequency (MHz)" />
-                            <TextBox Name="FrequencyMHz" Text="5800" />
-
-                            <Button HorizontalAlignment="Left" Click="CalculateFspl" Content="Calculate" />
-
-                            <Border Padding="16" CornerRadius="10" Background="#172554">
+                            <TextBlock FontSize="20" FontWeight="Bold" Text="Free-space path loss" />
+                            <TextBlock Foreground="{DynamicResource SemiColorText2}" Text="Estimate path loss from distance and frequency." />
+                            <Grid ColumnDefinitions="*,12,*">
                                 <StackPanel>
-                                    <TextBlock Foreground="#93C5FD" FontSize="12" Text="ESTIMATED PATH LOSS" />
-                                    <TextBlock Name="FsplResult" Foreground="White" FontSize="28" FontWeight="Bold" Text="—" />
+                                    <TextBlock Margin="0,0,0,5" FontWeight="SemiBold" Text="Distance (km)" />
+                                    <TextBox x:Name="DistanceKm" Text="1" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Margin="0,0,0,5" FontWeight="SemiBold" Text="Frequency (MHz)" />
+                                    <TextBox x:Name="FrequencyMHz" Text="5800" />
+                                </StackPanel>
+                            </Grid>
+                            <Button HorizontalAlignment="Left" Click="CalculateFspl" Content="Calculate" />
+                            <Border Padding="16" Theme="{DynamicResource CardBorder}">
+                                <StackPanel>
+                                    <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Estimated path loss" />
+                                    <TextBlock x:Name="FsplResult" Margin="0,5,0,0" FontSize="26" FontWeight="Bold" Text="—" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -315,44 +412,53 @@
                 </StackPanel>
             </ScrollViewer>
 
-            <ScrollViewer Name="HistoryPage" IsVisible="False">
-                <Grid MinHeight="500">
-                    <Border Padding="28" CornerRadius="14" BorderThickness="1" BorderBrush="#475569"
-                            HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="520">
-                        <StackPanel Spacing="8" HorizontalAlignment="Center">
-                            <TextBlock FontSize="28" HorizontalAlignment="Center" Text="↺" />
-                            <TextBlock FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center" Text="No saved runs yet" />
-                            <TextBlock TextAlignment="Center" Opacity="0.65" TextWrapping="Wrap"
-                                       Text="Persistent history and comparisons arrive in the product-polish phase. Export JSON reports for now." />
+            <ScrollViewer x:Name="HistoryPage" IsVisible="False">
+                <Grid Margin="28">
+                    <Border
+                        Padding="30"
+                        MaxWidth="620"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Theme="{DynamicResource CardBorder}">
+                        <StackPanel HorizontalAlignment="Center" Spacing="8">
+                            <TextBlock HorizontalAlignment="Center" FontSize="22" FontWeight="Bold" Text="No saved runs yet" />
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                TextAlignment="Center"
+                                TextWrapping="Wrap"
+                                Foreground="{DynamicResource SemiColorText2}"
+                                Text="Persistent history and comparisons arrive later. Export JSON reports for now." />
                         </StackPanel>
                     </Border>
                 </Grid>
             </ScrollViewer>
 
-            <ScrollViewer Name="SettingsPage" IsVisible="False">
-                <StackPanel Margin="32" Spacing="18" MaxWidth="760">
+            <ScrollViewer x:Name="SettingsPage" IsVisible="False">
+                <StackPanel Margin="18,18,28,32" Spacing="16">
                     <StackPanel>
-                        <TextBlock Foreground="#2563EB" FontSize="12" FontWeight="Bold" Text="PRIVACY &amp; BEHAVIOR" />
-                        <TextBlock FontSize="34" FontWeight="Bold" Text="Settings" />
-                        <TextBlock Opacity="0.68" Text="Netsira is local-first. External measurement is opt-in." />
+                        <TextBlock FontSize="12" FontWeight="Bold" Foreground="{DynamicResource SemiBlue5}" Text="PRIVACY &amp; BEHAVIOR" />
+                        <TextBlock Margin="0,3,0,0" FontSize="34" FontWeight="Bold" Text="Settings" />
+                        <TextBlock
+                            Margin="0,6,0,0"
+                            Foreground="{DynamicResource SemiColorText2}"
+                            Text="Netsira is local-first. External measurement stays opt-in." />
                     </StackPanel>
-
-                    <Border Padding="20" CornerRadius="14" BorderThickness="1" BorderBrush="#475569">
+                    <Border Padding="22" Theme="{DynamicResource CardBorder}">
                         <StackPanel Spacing="14">
                             <Grid ColumnDefinitions="*,Auto">
                                 <StackPanel>
-                                    <TextBlock FontWeight="SemiBold" Text="Telemetry" />
-                                    <TextBlock Opacity="0.65" Text="No analytics or hidden telemetry." />
+                                    <TextBlock FontWeight="Bold" Text="Telemetry" />
+                                    <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="No analytics or hidden telemetry." />
                                 </StackPanel>
-                                <TextBlock Grid.Column="1" VerticalAlignment="Center" Foreground="#22C55E" FontWeight="SemiBold" Text="Off" />
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center" FontWeight="Bold" Text="Off" />
                             </Grid>
                             <Separator />
                             <Grid ColumnDefinitions="*,Auto">
                                 <StackPanel>
-                                    <TextBlock FontWeight="SemiBold" Text="Measurement Lab" />
-                                    <TextBlock Opacity="0.65" Text="Runs only after explicit consent in Diagnostics." />
+                                    <TextBlock FontWeight="Bold" Text="M-Lab throughput" />
+                                    <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Runs only after explicit consent in Diagnostics." />
                                 </StackPanel>
-                                <TextBlock Grid.Column="1" VerticalAlignment="Center" FontWeight="SemiBold" Text="Opt-in" />
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center" FontWeight="Bold" Text="Opt-in" />
                             </Grid>
                         </StackPanel>
                     </Border>
