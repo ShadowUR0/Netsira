@@ -20,16 +20,37 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "9.6.0"
-      - name: Build Android APK
-        run: gradle -p android :app:assembleDebug
-      - name: Stage Android APK
+      - name: Prepare Android signing key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
+          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "ANDROID_KEYSTORE_BASE64 is not configured"; exit 1; }
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/netsira-release.jks"
+
+      - name: Build signed Android release APK
+        env:
+          NETSIRA_ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/netsira-release.jks
+          NETSIRA_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          NETSIRA_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          NETSIRA_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$NETSIRA_ANDROID_KEYSTORE_PASSWORD" || { echo "ANDROID_KEYSTORE_PASSWORD is not configured"; exit 1; }
+          test -n "$NETSIRA_ANDROID_KEY_ALIAS" || { echo "ANDROID_KEY_ALIAS is not configured"; exit 1; }
+          test -n "$NETSIRA_ANDROID_KEY_PASSWORD" || { echo "ANDROID_KEY_PASSWORD is not configured"; exit 1; }
+          gradle -p android :app:assembleRelease
+
+      - name: Verify and stage Android release APK
+        run: |
+          APK="android/app/build/outputs/apk/release/app-release.apk"
+          test -f "$APK"
+          "${ANDROID_HOME}/build-tools/36.0.0/apksigner" verify --verbose "$APK"
           mkdir -p release-assets
-          cp android/app/build/outputs/apk/debug/app-debug.apk release-assets/Netsira-Android-debug.apk
+          cp "$APK" release-assets/Netsira-Android-release.apk
+
       - uses: actions/upload-artifact@v4
         with:
           name: release-android
-          path: release-assets/*
+          path: release-assets/Netsira-Android-release.apk
 
   windows:
     if: contains(github.event.head_commit.message, '[release]')
@@ -101,7 +122,7 @@ jobs:
           gh release create "$TAG" release-assets/*             --target "$GITHUB_SHA"             --title "Netsira $TAG"             --prerelease             --notes "Phase 1–3 preview release.
 
           Includes:
-          - Android debug APK
+          - Signed Android release APK
           - Windows x64 direct EXE
           - Windows x64 ZIP package
           - Static Web build

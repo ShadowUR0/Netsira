@@ -5,14 +5,43 @@ plugins {
 
 android {
     namespace = "io.github.shadowur0.netsira"
+
+    val releaseStoreFile = System.getenv("NETSIRA_ANDROID_KEYSTORE_PATH")
+    val releaseStorePassword = System.getenv("NETSIRA_ANDROID_KEYSTORE_PASSWORD")
+    val releaseKeyAlias = System.getenv("NETSIRA_ANDROID_KEY_ALIAS")
+    val releaseKeyPassword = System.getenv("NETSIRA_ANDROID_KEY_PASSWORD")
+
+    signingConfigs {
+        if (!releaseStoreFile.isNullOrBlank() &&
+            !releaseStorePassword.isNullOrBlank() &&
+            !releaseKeyAlias.isNullOrBlank() &&
+            !releaseKeyPassword.isNullOrBlank()) {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
     compileSdk = 37
     defaultConfig {
         applicationId = "io.github.shadowur0.netsira"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.2.0-dev"
+        versionCode = 4
+        versionName = "0.3.0-preview.4"
     }
+    buildTypes {
+        getByName("release") {
+            isDebuggable = false
+            isMinifyEnabled = false
+            if (signingConfigs.names.contains("release")) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
+    }
+
     buildFeatures { compose = true }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
