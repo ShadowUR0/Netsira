@@ -78,24 +78,24 @@ private fun NetsiraApp() {
 
     var mlabConsent by remember { mutableStateOf(false) }
     var modeRunning by remember { mutableStateOf(false) }
-    var modeMessage by remember { mutableStateOf("Not run yet.") }
+    var modeMessage by remember { mutableStateOf("—") }
     var quickRunning by remember { mutableStateOf(false) }
     var speedRunning by remember { mutableStateOf(false) }
-    var speedMessage by remember { mutableStateOf("Not run yet.") }
+    var speedMessage by remember { mutableStateOf("—") }
 
     var stabilityJob by remember { mutableStateOf<Job?>(null) }
-    var stabilityMessage by remember { mutableStateOf("Not run yet.") }
+    var stabilityMessage by remember { mutableStateOf("—") }
 
     var discoveryRunning by remember { mutableStateOf(false) }
-    var discoveryMessage by remember { mutableStateOf("Not scanned.") }
+    var discoveryMessage by remember { mutableStateOf("—") }
     var airOsRunning by remember { mutableStateOf(false) }
-    var airOsMessage by remember { mutableStateOf("Not connected.") }
+    var airOsMessage by remember { mutableStateOf("—") }
     var airOsHost by rememberSaveable { mutableStateOf("http://192.168.1.20") }
     var airOsUser by rememberSaveable { mutableStateOf("ubnt") }
     var airOsPassword by remember { mutableStateOf("") }
 
     var alignmentJob by remember { mutableStateOf<Job?>(null) }
-    var alignmentMessage by remember { mutableStateOf("Not running.") }
+    var alignmentMessage by remember { mutableStateOf("—") }
     val alignmentSamples = remember { mutableListOf<AirOsLiveSample>() }
 
     var distance by rememberSaveable { mutableStateOf("1") }
@@ -123,7 +123,7 @@ private fun NetsiraApp() {
 
     fun runMode(mode: DiagnosticMode) {
         if (!mlabConsent) {
-            modeMessage = "Confirm the M-Lab privacy notice first."
+            modeMessage = "Enable M-Lab first"
             return
         }
         modeRunning = true
@@ -153,12 +153,12 @@ private fun NetsiraApp() {
             return
         }
         speedRunning = true
-        speedMessage = "Running M-Lab download/upload test…"
+        speedMessage = "Running…"
         scope.launch {
             try {
                 lastSpeed = MlabNdt7Client().run()
                 lastMode = "standard"
-                speedMessage = "Speed test complete."
+                speedMessage = "Done"
             } catch (e: Exception) {
                 speedMessage = "Speed test failed: " + (e.message ?: e.javaClass.simpleName)
             } finally {
@@ -169,7 +169,7 @@ private fun NetsiraApp() {
 
     fun startStability() {
         stabilityJob?.cancel()
-        stabilityMessage = "Starting 30-second stability test…"
+        stabilityMessage = "Starting…"
         stabilityJob = scope.launch {
             try {
                 val summary = withContext(Dispatchers.IO) {
@@ -193,9 +193,9 @@ private fun NetsiraApp() {
                 }
                 lastStability = summary
                 lastMode = "stability"
-                stabilityMessage = "Stability test complete."
+                stabilityMessage = "Done"
             } catch (_: CancellationException) {
-                stabilityMessage = "Stability test cancelled."
+                stabilityMessage = "Cancelled"
             } catch (e: Exception) {
                 stabilityMessage = "Stability test failed: " + (e.message ?: e.javaClass.simpleName)
             } finally {
@@ -206,7 +206,7 @@ private fun NetsiraApp() {
 
     fun discoverDevices() {
         discoveryRunning = true
-        discoveryMessage = "Scanning local network…"
+        discoveryMessage = "Scanning…"
         scope.launch {
             try {
                 val devices = UbntDiscovery.discover()
@@ -241,7 +241,7 @@ private fun NetsiraApp() {
                     AirOsClient().connectAndRead(airOsHost, airOsUser, airOsPassword)
                 }
                 lastMode = "standard"
-                airOsMessage = "Device status loaded."
+                airOsMessage = "Loaded"
             } catch (e: Exception) {
                 airOsMessage = "Device read failed: " + (e.message ?: e.javaClass.simpleName)
             } finally {
@@ -343,7 +343,7 @@ private fun NetsiraApp() {
             }
             AppPage.History -> PlaceholderPage(
                 Modifier.padding(padding), "No saved runs yet",
-                "Persistent history and comparisons arrive in the product-polish phase. Export JSON reports for now."
+                "Export reports for now."
             )
             AppPage.Settings -> SettingsPage(
                 Modifier.padding(padding), mlabConsent, { mlabConsent = it }
@@ -390,14 +390,14 @@ private fun DiagnosticsPage(
     ) {
         item {
             Text("Network health", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text("Start simple. Open advanced tests only when you need them.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            
         }
         item {
             ElevatedCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     AssistChip(onClick = {}, label = { Text(stateText) })
                     Text(
-                        lastQuick?.findings?.firstOrNull()?.title ?: "Run a quick check to see what is healthy.",
+                        lastQuick?.findings?.firstOrNull()?.title ?: "Check your connection",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -428,28 +428,28 @@ private fun DiagnosticsPage(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 MetricTile(
                     Modifier.weight(1f), "Loss",
-                    lastQuick?.let { String.format(Locale.US, "%.0f%%", it.lossPercent) } ?: "—", "Quick probes",
+                    lastQuick?.let { String.format(Locale.US, "%.0f%%", it.lossPercent) } ?: "—", "",
                     progress = lastQuick?.let { (1f - (it.lossPercent / 100.0).toFloat()).coerceIn(0f, 1f) }
                 )
                 MetricTile(
                     Modifier.weight(1f), "Stability",
                     lastStability?.let { String.format(Locale.US, "%.0f%%", 100 - it.probeLossPercent) } ?: "—",
-                    "Successful probes",
+                    "",
                     progress = lastStability?.let { ((100.0 - it.probeLossPercent) / 100.0).toFloat().coerceIn(0f, 1f) }
                 )
             }
         }
         if (lastQuick != null) {
             item {
-                SectionCard("What Netsira found", "Important findings first") {
+                SectionCard("Findings") {
                     lastQuick.findings.forEach { FindingRow(it) }
                 }
             }
         }
         item {
-            SectionCard("More tests", "Use these when the quick check is not enough") {
+            SectionCard("More tests") {
                 Text("Stability · 30 seconds", fontWeight = FontWeight.SemiBold)
-                Text("Repeated latency/loss checks; adds signal and SNR when airOS is available.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("30 sec · loss and timing", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = onStability, enabled = !stabilityRunning) { Text(if (stabilityRunning) "Running…" else "Run stability") }
                     OutlinedButton(onClick = onCancelStability, enabled = stabilityRunning) { Text("Cancel") }
@@ -457,7 +457,7 @@ private fun DiagnosticsPage(
                 Text(stabilityMessage, style = MaterialTheme.typography.bodySmall)
                 HorizontalDivider()
                 Text("Internet speed", fontWeight = FontWeight.SemiBold)
-                Text("Uses Measurement Lab and is optional.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("M-Lab speed test", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 ConsentRow(mlabConsent, onConsentChange)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = onSpeed, enabled = !speedRunning) { Text(if (speedRunning) "Running…" else "Speed test") }
@@ -466,7 +466,7 @@ private fun DiagnosticsPage(
                 Text(speedMessage, style = MaterialTheme.typography.bodySmall)
                 HorizontalDivider()
                 Text("Comprehensive", fontWeight = FontWeight.SemiBold)
-                Text("Combines internet checks with airOS status when credentials are available.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Internet + airOS", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedButton(onClick = onComprehensive, enabled = !modeRunning, modifier = Modifier.fillMaxWidth()) {
                     Text(if (modeRunning) "Running…" else "Run comprehensive test")
                 }
@@ -504,10 +504,10 @@ private fun DevicesPage(
     ) {
         item {
             Text("Local devices", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text("Connect to a supported CPE and see radio health visually.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            
         }
         item {
-            SectionCard("Find your Ubiquiti device", "Discovery stays on your local network") {
+            SectionCard("Find Ubiquiti") {
                 Button(onClick = onDiscover, enabled = !discoveryRunning, modifier = Modifier.fillMaxWidth()) {
                     Text(if (discoveryRunning) "Scanning…" else "Discover devices")
                 }
@@ -515,8 +515,8 @@ private fun DevicesPage(
             }
         }
         item {
-            SectionCard("Connect to airOS", "Credentials stay in memory and are not saved") {
-                LabeledField("Device address", "Example: 192.168.1.20", host, onHostChange)
+            SectionCard("Connect to airOS", "Not saved") {
+                LabeledField("Device address", null, host, onHostChange)
                 LabeledField("Username", null, username, onUsernameChange)
                 Text("Password", fontWeight = FontWeight.Medium)
                 OutlinedTextField(
@@ -539,14 +539,14 @@ private fun DevicesPage(
                         Modifier.weight(1f),
                         "Signal",
                         lastAirOs.signalDbm?.let { it.toInt().toString() + " dBm" } ?: "—",
-                        "Received power",
+                        "",
                         progress = lastAirOs.signalDbm?.let { ((it + 90.0) / 40.0).toFloat().coerceIn(0f, 1f) }
                     )
                     MetricTile(
                         Modifier.weight(1f),
                         "SNR",
                         lastAirOs.snrDb?.let { it.toInt().toString() + " dB" } ?: "—",
-                        "Signal quality",
+                        "",
                         progress = lastAirOs.snrDb?.let { (it / 30.0).toFloat().coerceIn(0f, 1f) }
                     )
                 }
@@ -564,13 +564,13 @@ private fun DevicesPage(
                 }
             }
             item {
-                SectionCard("Device findings", "What matters from the raw radio values") {
+                SectionCard("Device findings") {
                     FindingEngine.forAirOs(lastAirOs).forEach { FindingRow(it) }
                 }
             }
         }
         item {
-            SectionCard("Antenna alignment", "Live signal and SNR, refreshed every second") {
+            SectionCard("Antenna alignment", "Live signal + SNR") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = onAlignmentStart, enabled = !alignmentRunning) { Text(if (alignmentRunning) "Running…" else "Start") }
                     OutlinedButton(onClick = onAlignmentStop, enabled = alignmentRunning) { Text("Stop") }
@@ -598,16 +598,16 @@ private fun CalculatorPage(
     ) {
         item {
             Text("RF calculators", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text("Engineering tools stay separate from diagnostics.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            
         }
         item {
-            SectionCard("Free-space path loss", "Estimate path loss from distance and frequency") {
+            SectionCard("Free-space path loss") {
                 LabeledField("Distance (km)", null, distance, onDistanceChange, KeyboardType.Decimal)
                 LabeledField("Frequency (MHz)", null, frequency, onFrequencyChange, KeyboardType.Decimal)
                 Button(onClick = onCalculate, modifier = Modifier.fillMaxWidth()) { Text("Calculate") }
                 Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("Estimated path loss", style = MaterialTheme.typography.labelMedium)
+                        Text("Result", style = MaterialTheme.typography.labelMedium)
                         Text(result, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -625,16 +625,16 @@ private fun SettingsPage(modifier: Modifier, mlabConsent: Boolean, onConsentChan
     ) {
         item {
             Text("Settings", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text("Privacy and advanced behavior.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            
         }
         item {
-            SectionCard("Privacy", "Netsira is local-first") {
-                SettingRow("Telemetry", "No analytics or hidden telemetry", "Off")
+            SectionCard("Privacy") {
+                SettingRow("Telemetry", "None", "Off")
                 HorizontalDivider()
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("M-Lab throughput", fontWeight = FontWeight.SemiBold)
-                        Text("Optional external speed measurement", style = MaterialTheme.typography.bodySmall)
+                        Text("Opt-in", style = MaterialTheme.typography.bodySmall)
                     }
                     Switch(checked = mlabConsent, onCheckedChange = onConsentChange)
                 }
@@ -684,7 +684,9 @@ private fun MetricTile(
                     modifier = Modifier.fillMaxWidth().padding(top = 3.dp)
                 )
             }
-            Text(supporting, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (supporting.isNotBlank()) {
+                Text(supporting, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }
@@ -764,7 +766,7 @@ private fun FindingRow(finding: DiagnosticFinding) {
 private fun ConsentRow(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Checkbox(checked = checked, onCheckedChange = onCheckedChange)
-        Text("I understand the M-Lab privacy notice", modifier = Modifier.weight(1f))
+        Text("Allow M-Lab measurement", modifier = Modifier.weight(1f))
     }
 }
 
