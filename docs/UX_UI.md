@@ -73,3 +73,21 @@ Defer or explain:
   https://fluent2.microsoft.design/iconography
 
 These sources inform the interaction principles; Netsira does not copy any source UI verbatim.
+
+
+## Copy budget
+
+Visible UI copy should be treated as a scarce resource.
+
+- Page title: 1–3 words.
+- Section title: 1–4 words.
+- Button: verb-first, preferably 1–3 words.
+- Persistent helper text: only when it changes a decision or prevents an error.
+- Avoid a subtitle when the heading and controls already explain the section.
+- Do not repeat units or state in both the value and helper text.
+- Technical explanations belong in Details, tooltips, or an advanced view.
+- Empty/default states prefer symbols such as — over sentences like “Not run yet”.
+- Error text may be longer when it tells the person what happened or what to do next.
+- Privacy/security disclosures remain visible when consent or risk depends on them.
+
+Before adding UI copy, ask: would removing this text make the next action ambiguous? If not, remove or defer it.

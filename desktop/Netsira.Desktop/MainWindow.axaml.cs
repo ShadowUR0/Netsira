@@ -80,15 +80,15 @@ public sealed partial class MainWindow : Window
     {
         if (MlabConsent.IsChecked != true)
         {
-            ModeTestStatus.Text = "Enable the M-Lab privacy acknowledgement before running this test.";
+            ModeTestStatus.Text = "Enable M-Lab first.";
             return;
         }
 
         StandardTestButton.IsEnabled = false;
         ComprehensiveTestButton.IsEnabled = false;
         ModeTestStatus.Text = mode == DiagnosticMode.Standard
-            ? "Running standard test…"
-            : "Running comprehensive test…";
+            ? "Running…"
+            : "Running…";
 
         try
         {
@@ -326,7 +326,7 @@ public sealed partial class MainWindow : Window
         _stabilityCts = new CancellationTokenSource();
         StabilityStartButton.IsEnabled = false;
         StabilityStopButton.IsEnabled = true;
-        StabilityStatus.Text = "Starting 30-second stability test…";
+        StabilityStatus.Text = "Starting…";
 
         AirOsClient? airOs = null;
         try
@@ -381,7 +381,7 @@ public sealed partial class MainWindow : Window
         }
         catch (OperationCanceledException)
         {
-            StabilityStatus.Text = "Stability test cancelled.";
+            StabilityStatus.Text = "Cancelled.";
         }
         catch (Exception ex)
         {
@@ -403,7 +403,7 @@ public sealed partial class MainWindow : Window
     {
         if (MlabConsent.IsChecked != true)
         {
-            SpeedTestStatus.Text = "Enable the M-Lab privacy acknowledgement above before running this test.";
+            SpeedTestStatus.Text = "Enable M-Lab first.";
             return;
         }
 

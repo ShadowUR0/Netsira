@@ -392,3 +392,22 @@ input:focus-visible {
     margin-left: 26px;
   }
 }
+
+
+.compact-details {
+  margin-top: 10px;
+  color: var(--tblr-secondary-color);
+  font-size: 12px;
+}
+
+.compact-details summary {
+  cursor: pointer;
+  width: fit-content;
+  font-weight: 650;
+  color: var(--tblr-secondary-color);
+}
+
+.compact-details p {
+  margin: 6px 0 0;
+  max-width: 58ch;
+}
