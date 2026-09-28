@@ -308,7 +308,7 @@
 
                             <CheckBox
                                 x:Name="AllowInvalidCertificate"
-                                Content="Allow a self-signed HTTPS certificate for this connection" />
+                                Content="Allow self-signed certificate" />
                             <Button
                                 x:Name="AirOsButton"
                                 HorizontalAlignment="Left"
