@@ -82,7 +82,7 @@
                             <TextBlock
                                 Margin="0,6,0,0"
                                 Foreground="{DynamicResource SemiColorText2}"
-                                Text="Start with a quick check. Open deeper tests only when you need them." />
+                                Text="" />
                         </StackPanel>
                         <Button
                             x:Name="ExportReportButton"
@@ -112,7 +112,7 @@
                                     MaxWidth="680"
                                     TextWrapping="Wrap"
                                     Foreground="{DynamicResource SemiColorText2}"
-                                    Text="Netsira checks network reachability, DNS, latency and loss first." />
+                                    Text="" />
                             </StackPanel>
                             <Button
                                 x:Name="QuickTestButton"
@@ -150,7 +150,7 @@
                                 <TextBlock FontSize="11" Foreground="{DynamicResource SemiColorText2}" Text="INTERNET" />
                                 <TextBlock x:Name="InternetMetric" Margin="0,6,0,0" FontSize="22" FontWeight="Bold" Text="—" />
                                 <ProgressBar x:Name="InternetHealthBar" Margin="0,10,0,6" Height="6" Minimum="0" Maximum="100" Value="0" />
-                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Reachability / latency" />
+                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Latency" />
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="2" Padding="16" Theme="{DynamicResource CardBorder}">
@@ -158,7 +158,7 @@
                                 <TextBlock FontSize="11" Foreground="{DynamicResource SemiColorText2}" Text="LOSS" />
                                 <TextBlock x:Name="LossMetric" Margin="0,6,0,0" FontSize="22" FontWeight="Bold" Text="—" />
                                 <ProgressBar x:Name="LossHealthBar" Margin="0,10,0,6" Height="6" Minimum="0" Maximum="100" Value="0" />
-                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Successful probes" />
+                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="" />
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="4" Padding="16" Theme="{DynamicResource CardBorder}">
@@ -183,7 +183,7 @@
                             <TextBlock FontSize="19" FontWeight="Bold" Text="What Netsira found" />
                             <TextBlock
                                 Foreground="{DynamicResource SemiColorText2}"
-                                Text="Important findings first; raw measurements stay secondary." />
+                                Text="" />
                             <TextBlock
                                 x:Name="DeviceFindingStatus"
                                 TextWrapping="Wrap"
@@ -198,7 +198,7 @@
                                 <TextBlock
                                     TextWrapping="Wrap"
                                     Foreground="{DynamicResource SemiColorText2}"
-                                    Text="Repeated reachability checks. airOS signal is sampled too when device credentials are available." />
+                                    Text="30 sec · loss and timing" />
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <Button
                                         x:Name="StabilityStartButton"
@@ -220,10 +220,10 @@
                                 <TextBlock
                                     TextWrapping="Wrap"
                                     Foreground="{DynamicResource SemiColorText2}"
-                                    Text="Optional M-Lab throughput test. Measurement metadata includes your public IP." />
+                                    Text="M-Lab speed test" />
                                 <CheckBox
                                     x:Name="MlabConsent"
-                                    Content="I understand the M-Lab privacy notice" />
+                                    Content="Allow M-Lab measurement" />
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <Button
                                         x:Name="SpeedTestButton"
@@ -247,7 +247,7 @@
                                 <TextBlock
                                     Margin="0,5,0,0"
                                     Foreground="{DynamicResource SemiColorText2}"
-                                    Text="Combines internet diagnostics with airOS device status when credentials are available." />
+                                    Text="Internet + airOS" />
                             </StackPanel>
                             <Button
                                 x:Name="ComprehensiveTestButton"
@@ -267,13 +267,13 @@
                         <TextBlock
                             Margin="0,6,0,0"
                             Foreground="{DynamicResource SemiColorText2}"
-                            Text="Discover a supported CPE and inspect radio health without changing its configuration." />
+                            Text="" />
                     </StackPanel>
 
                     <Border Padding="20" Theme="{DynamicResource CardBorder}">
                         <StackPanel Spacing="10">
                             <TextBlock FontSize="18" FontWeight="Bold" Text="Find Ubiquiti devices" />
-                            <TextBlock Foreground="{DynamicResource SemiColorText2}" Text="Discovery stays on your local network." />
+                            <TextBlock Foreground="{DynamicResource SemiColorText2}" Text="" />
                             <Button
                                 x:Name="DiscoveryButton"
                                 HorizontalAlignment="Left"
@@ -288,7 +288,7 @@
                             <TextBlock FontSize="18" FontWeight="Bold" Text="Connect to airOS" />
                             <TextBlock
                                 Foreground="{DynamicResource SemiColorText2}"
-                                Text="Credentials stay in memory and are not saved." />
+                                Text="Not saved" />
 
                             <Grid ColumnDefinitions="*,12,*">
                                 <StackPanel>
@@ -324,7 +324,7 @@
                                 <TextBlock FontSize="11" Foreground="{DynamicResource SemiColorText2}" Text="SIGNAL" />
                                 <TextBlock x:Name="SignalMetric" Margin="0,6,0,0" FontSize="22" FontWeight="Bold" Text="—" />
                                 <ProgressBar x:Name="SignalQualityBar" Margin="0,10,0,6" Height="6" Minimum="0" Maximum="100" Value="0" />
-                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Received power" />
+                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="" />
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="2" Padding="16" Theme="{DynamicResource CardBorder}">
@@ -332,7 +332,7 @@
                                 <TextBlock FontSize="11" Foreground="{DynamicResource SemiColorText2}" Text="SNR" />
                                 <TextBlock x:Name="SnrMetric" Margin="0,6,0,0" FontSize="22" FontWeight="Bold" Text="—" />
                                 <ProgressBar x:Name="SnrQualityBar" Margin="0,10,0,6" Height="6" Minimum="0" Maximum="100" Value="0" />
-                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Signal quality" />
+                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="" />
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="4" Padding="16" Theme="{DynamicResource CardBorder}">
@@ -347,7 +347,7 @@
                                 <TextBlock FontSize="11" Foreground="{DynamicResource SemiColorText2}" Text="CPU" />
                                 <TextBlock x:Name="CpuMetric" Margin="0,6,0,0" FontSize="22" FontWeight="Bold" Text="—" />
                                 <ProgressBar x:Name="CpuLoadBar" Margin="0,10,0,6" Height="6" Minimum="0" Maximum="100" Value="0" />
-                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Device load" />
+                                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="" />
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -357,7 +357,7 @@
                             <TextBlock FontSize="18" FontWeight="Bold" Text="Antenna alignment" />
                             <TextBlock
                                 Foreground="{DynamicResource SemiColorText2}"
-                                Text="Live signal and SNR, refreshed every second." />
+                                Text="Live signal + SNR" />
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Button
                                     x:Name="AlignmentStartButton"
@@ -383,13 +383,13 @@
                         <TextBlock
                             Margin="0,6,0,0"
                             Foreground="{DynamicResource SemiColorText2}"
-                            Text="Engineering tools stay separate from diagnostics." />
+                            Text="" />
                     </StackPanel>
 
                     <Border Padding="22" MaxWidth="760" HorizontalAlignment="Left" Theme="{DynamicResource CardBorder}">
                         <StackPanel Spacing="12">
                             <TextBlock FontSize="20" FontWeight="Bold" Text="Free-space path loss" />
-                            <TextBlock Foreground="{DynamicResource SemiColorText2}" Text="Estimate path loss from distance and frequency." />
+                            <TextBlock Foreground="{DynamicResource SemiColorText2}" Text="" />
                             <Grid ColumnDefinitions="*,12,*">
                                 <StackPanel>
                                     <TextBlock Margin="0,0,0,5" FontWeight="SemiBold" Text="Distance (km)" />
@@ -403,7 +403,7 @@
                             <Button HorizontalAlignment="Left" Click="CalculateFspl" Content="Calculate" />
                             <Border Padding="16" Theme="{DynamicResource CardBorder}">
                                 <StackPanel>
-                                    <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Estimated path loss" />
+                                    <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Result" />
                                     <TextBlock x:Name="FsplResult" Margin="0,5,0,0" FontSize="26" FontWeight="Bold" Text="—" />
                                 </StackPanel>
                             </Border>
@@ -427,7 +427,7 @@
                                 TextAlignment="Center"
                                 TextWrapping="Wrap"
                                 Foreground="{DynamicResource SemiColorText2}"
-                                Text="Persistent history and comparisons arrive later. Export JSON reports for now." />
+                                Text="Export reports for now." />
                         </StackPanel>
                     </Border>
                 </Grid>
@@ -441,14 +441,14 @@
                         <TextBlock
                             Margin="0,6,0,0"
                             Foreground="{DynamicResource SemiColorText2}"
-                            Text="Netsira is local-first. External measurement stays opt-in." />
+                            Text="" />
                     </StackPanel>
                     <Border Padding="22" Theme="{DynamicResource CardBorder}">
                         <StackPanel Spacing="14">
                             <Grid ColumnDefinitions="*,Auto">
                                 <StackPanel>
                                     <TextBlock FontWeight="Bold" Text="Telemetry" />
-                                    <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="No analytics or hidden telemetry." />
+                                    <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="None" />
                                 </StackPanel>
                                 <TextBlock Grid.Column="1" VerticalAlignment="Center" FontWeight="Bold" Text="Off" />
                             </Grid>
@@ -456,7 +456,7 @@
                             <Grid ColumnDefinitions="*,Auto">
                                 <StackPanel>
                                     <TextBlock FontWeight="Bold" Text="M-Lab throughput" />
-                                    <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Runs only after explicit consent in Diagnostics." />
+                                    <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="Opt-in" />
                                 </StackPanel>
                                 <TextBlock Grid.Column="1" VerticalAlignment="Center" FontWeight="Bold" Text="Opt-in" />
                             </Grid>
