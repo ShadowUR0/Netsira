@@ -69,14 +69,14 @@ export function App() {
   const [page, setPage] = useState<Page>('diagnostics')
   const [mlabConsent, setMlabConsent] = useState(false)
   const [modeRunning, setModeRunning] = useState(false)
-  const [modeText, setModeText] = useState('Not run yet.')
+  const [modeText, setModeText] = useState('—')
   const [quickRunning, setQuickRunning] = useState(false)
   const [lastQuick, setLastQuick] = useState<WebQuickResult | null>(null)
   const [speedRunning, setSpeedRunning] = useState(false)
   const [lastSpeed, setLastSpeed] = useState<Ndt7Result | null>(null)
   const [stabilityRunning, setStabilityRunning] = useState(false)
   const [lastStability, setLastStability] = useState<WebStabilityResult | null>(null)
-  const [stabilityText, setStabilityText] = useState('Not run yet.')
+  const [stabilityText, setStabilityText] = useState('—')
   const stabilityAbort = useRef<AbortController | null>(null)
   const [distance, setDistance] = useState('1')
   const [frequency, setFrequency] = useState('5800')
@@ -93,19 +93,19 @@ export function App() {
 
   async function runStandard() {
     if (!mlabConsent) {
-      setModeText('Confirm the M-Lab privacy notice first.')
+      setModeText('Enable M-Lab first')
       return
     }
     setModeRunning(true)
-    setModeText('Running connection checks and throughput test…')
+    setModeText('Running…')
     try {
       const quickResult = await runWebQuickTest()
       setLastQuick(quickResult)
       const speedResult = await runNdt7()
       setLastSpeed(speedResult)
-      setModeText('Standard test complete.')
+      setModeText('Done')
     } catch (error) {
-      setModeText('Test failed: ' + (error instanceof Error ? error.message : 'unknown error'))
+      setModeText('Failed: ' + (error instanceof Error ? error.message : 'unknown error'))
     } finally {
       setModeRunning(false)
     }
@@ -113,7 +113,7 @@ export function App() {
 
   async function runSpeed() {
     if (!mlabConsent) {
-      setModeText('Confirm the M-Lab privacy notice first.')
+      setModeText('Enable M-Lab first')
       return
     }
     setSpeedRunning(true)
@@ -129,7 +129,7 @@ export function App() {
     stabilityAbort.current?.abort()
     stabilityAbort.current = controller
     setStabilityRunning(true)
-    setStabilityText('Starting 30-second browser stability test…')
+    setStabilityText('Starting…')
 
     try {
       const result = await runWebStability(
@@ -142,12 +142,12 @@ export function App() {
         },
       )
       setLastStability(result)
-      setStabilityText('Stability test complete.')
+      setStabilityText('Done')
     } catch (error) {
       setStabilityText(
         error instanceof DOMException && error.name === 'AbortError'
-          ? 'Stability test cancelled.'
-          : 'Stability test failed.',
+          ? 'Cancelled'
+          : 'Failed',
       )
     } finally {
       setStabilityRunning(false)
@@ -175,7 +175,7 @@ export function App() {
           <div className="brand-mark">N</div>
           <div>
             <div className="brand-title">Netsira</div>
-            <div className="brand-subtitle">Network diagnostics</div>
+            <div className="brand-subtitle">Network tools</div>
           </div>
         </div>
 
@@ -196,7 +196,7 @@ export function App() {
 
         <div className="sidebar-footer">
           <IconShieldCheck size={18} />
-          <span>Local-first · no telemetry</span>
+          <span>Private by default</span>
         </div>
       </aside>
 
@@ -207,7 +207,7 @@ export function App() {
               <div>
                 <div className="eyebrow">NETWORK HEALTH</div>
                 <h1>Diagnostics</h1>
-                <p>Start with a quick check. Open advanced tests only when you need them.</p>
+                
               </div>
               <button
                 className="btn btn-outline-primary export-button"
@@ -221,14 +221,14 @@ export function App() {
             <section className="health-hero">
               <div>
                 <StatusPill state={overallState}>{overallLabel}</StatusPill>
-                <h2>{!lastQuick ? 'Run a quick check to see what is healthy.' : lastQuick.findings[0]?.title ?? 'Check complete.'}</h2>
-                <p>The browser can check internet reachability and stability. Deep LAN/CPE checks require the native app.</p>
+                <h2>{!lastQuick ? 'Check your connection' : lastQuick.findings[0]?.title ?? 'Check complete'}</h2>
+                
               </div>
               <button className="primary-action" disabled={quickRunning} onClick={runQuick}>
                 <IconGauge size={22} />
                 <span>
                   <strong>{quickRunning ? 'Checking…' : 'Run quick check'}</strong>
-                  <small>Usually finishes in a few seconds</small>
+                  
                 </span>
                 <IconChevronRight size={20} />
               </button>
@@ -252,7 +252,7 @@ export function App() {
               <MetricCard
                 label="Internet"
                 value={!lastQuick ? 'Not tested' : lastQuick.httpsReachable ? 'Reachable' : 'Unavailable'}
-                hint={lastQuick?.latencyMs == null ? 'HTTPS reachability' : lastQuick.latencyMs.toFixed(0) + ' ms request'}
+                hint={lastQuick?.latencyMs == null ? undefined : lastQuick.latencyMs.toFixed(0) + ' ms'}
                 icon={<IconWorld size={22} />}
                 state={!lastQuick ? 'neutral' : lastQuick.httpsReachable ? 'good' : 'problem'}
                 progress={lastQuick ? (lastQuick.httpsReachable ? 1 : 0) : undefined}
@@ -260,14 +260,14 @@ export function App() {
               <MetricCard
                 label="Download"
                 value={lastSpeed ? lastSpeed.downloadMbps.toFixed(1) + ' Mb/s' : '—'}
-                hint="M-Lab throughput"
+                
                 icon={<IconDownload size={22} />}
                 state={lastSpeed ? 'good' : 'neutral'}
               />
               <MetricCard
                 label="Stability"
                 value={lastStability ? (100 - lastStability.failurePercent).toFixed(0) + '%' : '—'}
-                hint={lastStability ? 'Successful checks' : '30-second test'}
+                hint={lastStability ? undefined : '30 sec'}
                 icon={<IconActivityHeartbeat size={22} />}
                 state={!lastStability ? 'neutral' : lastStability.failurePercent > 0 ? 'warning' : 'good'}
                 progress={lastStability ? Math.max(0, Math.min(1, (100 - lastStability.failurePercent) / 100)) : undefined}
@@ -275,7 +275,7 @@ export function App() {
               <MetricCard
                 label="Device / CPE"
                 value="Native app"
-                hint="Signal, SNR, Ethernet and alignment"
+                
                 icon={<IconWifi size={22} />}
               />
             </section>
@@ -285,7 +285,7 @@ export function App() {
                 <div className="panel-heading">
                   <div>
                     <h2>What Netsira found</h2>
-                    <p>Important findings first; raw measurements stay secondary.</p>
+                    
                   </div>
                 </div>
                 <div className="finding-list">
@@ -305,7 +305,7 @@ export function App() {
               <div className="panel-heading">
                 <div>
                   <h2>More tests</h2>
-                  <p>Use these when the quick check is not enough.</p>
+                  
                 </div>
               </div>
 
@@ -313,7 +313,7 @@ export function App() {
                 <article className="action-card">
                   <IconActivityHeartbeat size={24} />
                   <h3>Stability test</h3>
-                  <p>Checks the connection repeatedly for 30 seconds and summarizes failures and timing variation.</p>
+                  <p>30 sec · loss and timing</p>
                   <div className="button-row">
                     <button className="btn btn-primary" disabled={stabilityRunning} onClick={runStability}>
                       {stabilityRunning ? 'Running…' : 'Run stability test'}
@@ -340,11 +340,15 @@ export function App() {
                 <article className="action-card">
                   <IconGauge size={24} />
                   <h3>Internet speed</h3>
-                  <p>Measures download and upload using Measurement Lab. This sends measurement metadata to M-Lab.</p>
+                  <p>M-Lab speed test</p>
                   <label className="consent-row">
                     <input type="checkbox" checked={mlabConsent} onChange={(e) => setMlabConsent(e.target.checked)} />
-                    <span>I understand the M-Lab privacy notice</span>
+                    <span>Allow M-Lab measurement</span>
                   </label>
+                  <details className="compact-details">
+                    <summary>Privacy</summary>
+                    <p>M-Lab may record measurement metadata, including your public IP.</p>
+                  </details>
                   <div className="button-row">
                     <button className="btn btn-primary" disabled={speedRunning} onClick={runSpeed}>
                       {speedRunning ? 'Running…' : 'Run speed test'}
@@ -372,14 +376,18 @@ export function App() {
               <div>
                 <div className="eyebrow">LOCAL NETWORK</div>
                 <h1>Devices</h1>
-                <p>Deep CPE discovery and radio diagnostics are available in the Android and Windows apps.</p>
+                
               </div>
             </header>
             <section className="panel native-callout">
               <IconAntennaBars5 size={34} />
               <div>
                 <h2>Use a native app for CPE diagnostics</h2>
-                <p>Browsers cannot reliably access local airOS devices because of CORS, local-network restrictions, and certificate rules.</p>
+                <p>Use Android or Windows for local-device checks.</p>
+                <details className="compact-details">
+                  <summary>Why?</summary>
+                  <p>Browsers can block local devices through CORS, certificate, or local-network rules.</p>
+                </details>
                 <div className="capability-list">
                   <span>Signal & SNR</span><span>Chain balance</span><span>Ethernet link</span><span>Live alignment</span>
                 </div>
@@ -394,12 +402,12 @@ export function App() {
               <div>
                 <div className="eyebrow">RF TOOLS</div>
                 <h1>Calculators</h1>
-                <p>Engineering tools stay separate from diagnostics so you can use them at any time.</p>
+                
               </div>
             </header>
             <section className="panel calculator-panel">
               <div className="panel-heading">
-                <div><h2>Free-space path loss</h2><p>Estimate path loss from distance and frequency.</p></div>
+                <div><h2>Free-space path loss</h2></div>
                 <StatusPill state="neutral">FSPL</StatusPill>
               </div>
               <div className="form-grid">
@@ -413,7 +421,7 @@ export function App() {
                 </label>
               </div>
               <button className="btn btn-primary" onClick={calculate}>Calculate</button>
-              <div className="calculator-result"><small>Estimated path loss</small><strong>{fspl}</strong></div>
+              <div className="calculator-result"><small>Result</small><strong>{fspl}</strong></div>
             </section>
           </>
         )}
@@ -424,13 +432,13 @@ export function App() {
               <div>
                 <div className="eyebrow">PAST TESTS</div>
                 <h1>History</h1>
-                <p>Saved test history and comparisons are planned for the product-polish phase.</p>
+                
               </div>
             </header>
             <section className="empty-state panel">
               <IconHistory size={36} />
               <h2>No saved runs yet</h2>
-              <p>For now, export a JSON report after a test. Persistent history will live here.</p>
+              <p>Export reports for now.</p>
             </section>
           </>
         )}
@@ -441,18 +449,18 @@ export function App() {
               <div>
                 <div className="eyebrow">PRIVACY & BEHAVIOR</div>
                 <h1>Settings</h1>
-                <p>Netsira is local-first. External measurement is opt-in.</p>
+                
               </div>
             </header>
             <section className="panel settings-list">
               <div className="setting-row">
                 <IconShieldCheck size={24} />
-                <div><h3>Telemetry</h3><p>No analytics or hidden telemetry.</p></div>
+                <div><h3>Telemetry</h3><p>None</p></div>
                 <StatusPill state="good">Off</StatusPill>
               </div>
               <div className="setting-row">
                 <IconWorld size={24} />
-                <div><h3>M-Lab throughput</h3><p>Runs only after explicit consent in Diagnostics.</p></div>
+                <div><h3>M-Lab</h3><p>Opt-in</p></div>
                 <StatusPill state="neutral">Opt-in</StatusPill>
               </div>
             </section>
